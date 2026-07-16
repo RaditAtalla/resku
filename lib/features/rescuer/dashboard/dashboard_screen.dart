@@ -1,8 +1,12 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import '../../../core/database/local_db.dart';
 import '../../../core/models/survivor_record.dart';
 import '../../../core/models/rescuer_message.dart';
 import '../../../core/utils/design_system.dart';
+import '../../../core/utils/heuristic_engine.dart';
 import 'map/osm_map_widget.dart';
 import 'table/survivors_table_widget.dart';
 import 'ai/ai_planner_widget.dart';
@@ -36,18 +40,13 @@ class _RescuerDashboardScreenState extends State<RescuerDashboardScreen> {
   Timer? _clockTimer;
 
   // Broadcast Logs
-  final List<RescuerMessage> _broadcastLogs = [
-    RescuerMessage(
-      id: 'ann-1',
-      message: 'An evac center is open at the North Sports Field. Helicopter drops planned for food and fresh water.',
-      timestamp: DateTime.now().subtract(const Duration(minutes: 10)).millisecondsSinceEpoch,
-    ),
-  ];
-
+  final List<RescuerMessage> _broadcastLogs = [];
+  
   @override
   void initState() {
     super.initState();
-    _loadInitialData();
+    _loadSurvivorsFromDb();
+    _loadBroadcastLogs();
     _startClock();
   }
 
@@ -58,51 +57,35 @@ class _RescuerDashboardScreenState extends State<RescuerDashboardScreen> {
     super.dispose();
   }
 
-  void _loadInitialData() {
-    setState(() {
-      _survivors = [
-        SurvivorRecord(
-          id: 'john',
-          name: 'John Doe',
-          latitude: -6.2088,
-          longitude: 106.8456,
-          status: SurvivorStatus.critical,
-          needs: 'First Aid, Water, Fracture Splint',
-          timestamp: DateTime.now().subtract(const Duration(minutes: 5)).millisecondsSinceEpoch,
-          sequenceNumber: 1,
-        ),
-        SurvivorRecord(
-          id: 'jane',
-          name: 'Jane Smith',
-          latitude: -6.2100,
-          longitude: 106.8480,
-          status: SurvivorStatus.injured,
-          needs: 'Blankets, Thermal Wear, Water',
-          timestamp: DateTime.now().subtract(const Duration(minutes: 12)).millisecondsSinceEpoch,
-          sequenceNumber: 2,
-        ),
-        SurvivorRecord(
-          id: 'budi',
-          name: 'Budi Santoso',
-          latitude: -6.2112,
-          longitude: 106.8415,
-          status: SurvivorStatus.critical,
-          needs: 'Asthma Inhaler, Oxygen',
-          timestamp: DateTime.now().subtract(const Duration(minutes: 18)).millisecondsSinceEpoch,
-          sequenceNumber: 3,
-        ),
-        SurvivorRecord(
-          id: 'alice',
-          name: 'Alice Green',
-          latitude: -6.2135,
-          longitude: 106.8522,
-          status: SurvivorStatus.safe,
-          needs: 'None (Holding Shelter Area)',
-          timestamp: DateTime.now().subtract(const Duration(minutes: 22)).millisecondsSinceEpoch,
-          sequenceNumber: 4,
-        ),
-      ];
-    });
+  Future<void> _loadSurvivorsFromDb() async {
+    final db = LocalDB();
+    final list = await db.getAllSurvivors();
+    if (mounted) {
+      setState(() {
+        _survivors = list;
+      });
+    }
+  }
+
+  Future<void> _loadBroadcastLogs() async {
+    final db = LocalDB();
+    final list = await db.getAllRescuerMessages();
+    list.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+    if (mounted) {
+      setState(() {
+        _broadcastLogs.clear();
+        _broadcastLogs.addAll(list);
+        if (_broadcastLogs.isEmpty) {
+          final seedMsg = RescuerMessage(
+            id: 'ann-1',
+            message: 'An evac center is open at the North Sports Field. Helicopter drops planned for food and fresh water.',
+            timestamp: DateTime.now().subtract(const Duration(minutes: 10)).millisecondsSinceEpoch,
+          );
+          _broadcastLogs.add(seedMsg);
+          db.saveRescuerMessage(seedMsg);
+        }
+      });
+    }
   }
 
   void _startClock() {
@@ -191,17 +174,10 @@ class _RescuerDashboardScreenState extends State<RescuerDashboardScreen> {
     Timer(const Duration(seconds: 1), () {
       if (!mounted) return;
       
-      final active = _survivors.where((s) => s.status != SurvivorStatus.safe).toList();
-      
-      // Sort: Critical first, then Injured.
-      active.sort((a, b) {
-        int scoreA = a.status == SurvivorStatus.critical ? (a.name == 'John Doe' ? 98 : 95) : 85;
-        int scoreB = b.status == SurvivorStatus.critical ? (b.name == 'John Doe' ? 98 : 95) : 85;
-        return scoreB.compareTo(scoreA); // high to low
-      });
+      final prioritizedQueue = HeuristicEngine.sortDispatchQueue(_survivors);
 
       setState(() {
-        _aiPlan = active;
+        _aiPlan = prioritizedQueue;
         _isAiLoading = false;
       });
 
@@ -217,22 +193,24 @@ class _RescuerDashboardScreenState extends State<RescuerDashboardScreen> {
     final survivor = _survivors[survivorIndex];
     triggerToast('Rescue unit dispatched to locate ${survivor.name}', Icons.flight_takeoff);
 
+    final updated = SurvivorRecord(
+      id: survivor.id,
+      name: survivor.name,
+      latitude: survivor.latitude,
+      longitude: survivor.longitude,
+      status: SurvivorStatus.safe,
+      needs: 'None (Rescue unit arrived)',
+      timestamp: DateTime.now().millisecondsSinceEpoch,
+      sequenceNumber: survivor.sequenceNumber + 1,
+    );
+
     setState(() {
-      _survivors[survivorIndex] = SurvivorRecord(
-        id: survivor.id,
-        name: survivor.name,
-        latitude: survivor.latitude,
-        longitude: survivor.longitude,
-        status: SurvivorStatus.safe,
-        needs: 'None (Rescue unit arrived)',
-        timestamp: DateTime.now().millisecondsSinceEpoch,
-        sequenceNumber: survivor.sequenceNumber + 1,
-      );
-      
-      // Remove from AI Plan or update it
+      _survivors[survivorIndex] = updated;
       _aiPlan.removeWhere((s) => s.id == id);
       _focusedSurvivorId = null;
     });
+
+    LocalDB().saveSurvivorRecord(updated);
   }
 
   // Send Broadcast Message
@@ -249,7 +227,252 @@ class _RescuerDashboardScreenState extends State<RescuerDashboardScreen> {
       _broadcastLogs.insert(0, newMessage);
     });
 
+    LocalDB().saveRescuerMessage(newMessage);
     triggerToast('Announcement broadcasted to BLE mesh network!', Icons.rss_feed);
+  }
+
+  // Tactical Glassmorphic Sync Dialog to pull databases from Data Mule
+  void _showMuleSyncDialog() {
+    showDialog(
+      context: context,
+      barrierColor: Colors.black54,
+      builder: (BuildContext context) {
+        final addressController = TextEditingController(text: 'http://192.168.43.1:8080');
+        String status = 'READY'; // READY, CONNECTING, SYNCHRONIZING, SUCCESS, ERROR
+        String details = 'Connect to the mobile mule\'s Wi-Fi hotspot and trigger harvest sync.';
+        int retrievedCount = 0;
+
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            bool isLoading = status == 'CONNECTING' || status == 'SYNCHRONIZING';
+            Color statusColor = AppColors.muted;
+            if (status == 'CONNECTING' || status == 'SYNCHRONIZING') statusColor = AppColors.injured;
+            if (status == 'SUCCESS') statusColor = AppColors.safe;
+            if (status == 'ERROR') statusColor = AppColors.critical;
+
+            void runSync() async {
+              setDialogState(() {
+                status = 'CONNECTING';
+                details = 'Attempting to handshake with mobile sync server...';
+              });
+
+              try {
+                final url = addressController.text.trim();
+                final uri = Uri.parse(url.endsWith('/') ? '${url}api/sync' : '$url/api/sync');
+                
+                final response = await http.get(uri).timeout(const Duration(seconds: 10));
+                
+                if (response.statusCode == 200) {
+                  setDialogState(() {
+                    status = 'SYNCHRONIZING';
+                    details = 'Downloading and merging survivor databases...';
+                  });
+
+                  final List<dynamic> recordsJson = jsonDecode(response.body);
+                  retrievedCount = recordsJson.length;
+                  
+                  final db = LocalDB();
+                  for (var item in recordsJson) {
+                    final record = SurvivorRecord.fromMap(Map<String, dynamic>.from(item));
+                    await db.saveSurvivorRecord(record);
+                  }
+
+                  // Reload dashboard data
+                  await _loadSurvivorsFromDb();
+
+                  setDialogState(() {
+                    status = 'SUCCESS';
+                    details = 'Database synchronization complete. $retrievedCount records integrated.';
+                  });
+
+                  triggerToast('Successfully synced $retrievedCount records from Data Mule!', Icons.cloud_download);
+                } else {
+                  throw Exception('HTTP Error ${response.statusCode}');
+                }
+              } catch (e) {
+                setDialogState(() {
+                  status = 'ERROR';
+                  details = 'Sync failed: $e\n\nEnsure:\n1. Your device is connected to the Rescuer Mobile Hotspot.\n2. The Hotspot Sync Server is active on the mobile app.\n3. The Server URL matches exactly.';
+                });
+              }
+            }
+
+            return Dialog(
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 400),
+                child: ReskuCard(
+                  accentColor: statusColor,
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      // Header
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: const [
+                              Icon(Icons.hub_outlined, color: AppColors.orange, size: 20),
+                              SizedBox(width: 8),
+                              Text(
+                                'MULE SYNC MANAGER',
+                                style: AppTextStyles.cardTitle,
+                              ),
+                            ],
+                          ),
+                          if (!isLoading)
+                            GestureDetector(
+                              onTap: () => Navigator.pop(context),
+                              child: const Icon(Icons.close, color: AppColors.muted, size: 18),
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      // Text Input
+                      const Text(
+                        'DATA MULE API ENDPOINT:',
+                        style: TextStyle(
+                          fontSize: 9,
+                          color: AppColors.muted,
+                          fontWeight: FontWeight.bold,
+                          fontFamily: 'monospace',
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Container(
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: AppColors.grayBg,
+                          border: Border.all(color: AppColors.border),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: TextField(
+                          controller: addressController,
+                          enabled: !isLoading,
+                          style: const TextStyle(fontSize: 12, fontFamily: 'monospace', color: AppColors.black),
+                          decoration: const InputDecoration(
+                            hintText: 'http://192.168.43.1:8080',
+                            border: InputBorder.none,
+                            contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                            isDense: true,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      // Status Area
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: AppColors.grayBg,
+                          border: Border.all(color: AppColors.border),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Text(
+                                  'SYNC STATUS:',
+                                  style: TextStyle(
+                                    fontSize: 8,
+                                    color: AppColors.muted,
+                                    fontWeight: FontWeight.bold,
+                                    fontFamily: 'monospace',
+                                  ),
+                                ),
+                                Text(
+                                  status,
+                                  style: TextStyle(
+                                    fontSize: 9,
+                                    color: statusColor,
+                                    fontWeight: FontWeight.bold,
+                                    fontFamily: 'monospace',
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              details,
+                              style: const TextStyle(
+                                fontSize: 10,
+                                height: 1.35,
+                                color: AppColors.muted,
+                              ),
+                            ),
+                            if (isLoading) ...[
+                              const SizedBox(height: 10),
+                              const LinearProgressIndicator(
+                                backgroundColor: AppColors.border,
+                                valueColor: AlwaysStoppedAnimation<Color>(AppColors.orange),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      // Action buttons
+                      Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton(
+                              style: OutlinedButton.styleFrom(
+                                side: const BorderSide(color: AppColors.border),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                padding: const EdgeInsets.symmetric(vertical: 12),
+                              ),
+                              onPressed: isLoading ? null : () => Navigator.pop(context),
+                              child: const Text(
+                                'Dismiss',
+                                style: TextStyle(
+                                  color: AppColors.black,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 11,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.orange,
+                                foregroundColor: Colors.white,
+                                elevation: 0,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                padding: const EdgeInsets.symmetric(vertical: 12),
+                              ),
+                              onPressed: isLoading ? null : runSync,
+                              child: const Text(
+                                'HARVEST SYNC',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 11,
+                                  fontFamily: 'Inter',
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
   }
 
   @override
@@ -293,6 +516,18 @@ class _RescuerDashboardScreenState extends State<RescuerDashboardScreen> {
           ],
         ),
         actions: [
+          // Mule Sync Action Button
+          Padding(
+            padding: const EdgeInsets.only(right: 8.0),
+            child: Center(
+              child: ReskuButton.outlined(
+                label: 'SYNC MULE',
+                icon: Icons.sync,
+                height: 28,
+                onPressed: _showMuleSyncDialog,
+              ),
+            ),
+          ),
           Padding(
             padding: const EdgeInsets.only(right: 20.0),
             child: Center(

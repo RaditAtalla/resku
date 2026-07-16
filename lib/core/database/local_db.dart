@@ -22,15 +22,68 @@ class LocalDB {
     _survivorsBox = await Hive.openBox('survivor_records_box');
     _messagesBox = await Hive.openBox('rescuer_messages_box');
     _initialized = true;
+
+    // Seed mock data if empty (excluding metadata keys)
+    final nonMetaKeys = _survivorsBox.keys.where((k) => k != 'device_uuid' && k != 'device_uuid_survivor' && k != 'device_uuid_rescuer');
+    if (nonMetaKeys.isEmpty) {
+      debugPrint('LocalDB: Seeding initial mock survivor records...');
+      final defaultSurvivors = [
+        SurvivorRecord(
+          id: 'john',
+          name: 'John Doe',
+          latitude: -6.2088,
+          longitude: 106.8456,
+          status: SurvivorStatus.critical,
+          needs: 'First Aid, Water, Fracture Splint',
+          timestamp: DateTime.now().subtract(const Duration(minutes: 5)).millisecondsSinceEpoch,
+          sequenceNumber: 1,
+        ),
+        SurvivorRecord(
+          id: 'jane',
+          name: 'Jane Smith',
+          latitude: -6.2100,
+          longitude: 106.8480,
+          status: SurvivorStatus.injured,
+          needs: 'Blankets, Thermal Wear, Water',
+          timestamp: DateTime.now().subtract(const Duration(minutes: 12)).millisecondsSinceEpoch,
+          sequenceNumber: 2,
+        ),
+        SurvivorRecord(
+          id: 'budi',
+          name: 'Budi Santoso',
+          latitude: -6.2112,
+          longitude: 106.8415,
+          status: SurvivorStatus.critical,
+          needs: 'Asthma Inhaler, Oxygen',
+          timestamp: DateTime.now().subtract(const Duration(minutes: 18)).millisecondsSinceEpoch,
+          sequenceNumber: 3,
+        ),
+        SurvivorRecord(
+          id: 'alice',
+          name: 'Alice Green',
+          latitude: -6.2135,
+          longitude: 106.8522,
+          status: SurvivorStatus.safe,
+          needs: 'None (Holding Shelter Area)',
+          timestamp: DateTime.now().subtract(const Duration(minutes: 22)).millisecondsSinceEpoch,
+          sequenceNumber: 4,
+        ),
+      ];
+      for (var s in defaultSurvivors) {
+        await _survivorsBox.put(s.id, s.toMap());
+      }
+    }
   }
 
   // Generate or retrieve a persistent stable unique identifier for this device
-  Future<String> getOrCreateDeviceUUID() async {
+  Future<String> getOrCreateDeviceUUID({bool isRescuer = false}) async {
     await init();
-    String? uuid = _survivorsBox.get('device_uuid') as String?;
+    final key = isRescuer ? 'device_uuid_rescuer' : 'device_uuid_survivor';
+    String? uuid = _survivorsBox.get(key) as String?;
     if (uuid == null) {
-      uuid = 'survivor_${DateTime.now().millisecondsSinceEpoch}_${_randomString(4)}';
-      await _survivorsBox.put('device_uuid', uuid);
+      final prefix = isRescuer ? 'rescuer' : 'survivor';
+      uuid = '${prefix}_${DateTime.now().millisecondsSinceEpoch}_${_randomString(4)}';
+      await _survivorsBox.put(key, uuid);
       debugPrint('Generated and stored new device UUID: $uuid');
     }
     return uuid;
@@ -96,12 +149,14 @@ class LocalDB {
   }
 
   // Get or create device UUID synchronously
-  String getOrCreateDeviceUUIDSync() {
-    if (!_initialized) return 'survivor_unknown';
-    String? uuid = _survivorsBox.get('device_uuid') as String?;
+  String getOrCreateDeviceUUIDSync({bool isRescuer = false}) {
+    if (!_initialized) return isRescuer ? 'rescuer_unknown' : 'survivor_unknown';
+    final key = isRescuer ? 'device_uuid_rescuer' : 'device_uuid_survivor';
+    String? uuid = _survivorsBox.get(key) as String?;
     if (uuid == null) {
-      uuid = 'survivor_${DateTime.now().millisecondsSinceEpoch}_${_randomString(4)}';
-      _survivorsBox.put('device_uuid', uuid);
+      final prefix = isRescuer ? 'rescuer' : 'survivor';
+      uuid = '${prefix}_${DateTime.now().millisecondsSinceEpoch}_${_randomString(4)}';
+      _survivorsBox.put(key, uuid);
     }
     return uuid;
   }

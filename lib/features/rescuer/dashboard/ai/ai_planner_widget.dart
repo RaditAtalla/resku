@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/models/survivor_record.dart';
 import '../../../../core/models/rescuer_message.dart';
 import '../../../../core/utils/design_system.dart';
+import '../../../../core/utils/heuristic_engine.dart';
 
 // Left/Right Panel widget for Rescuer dashboard managing AI plan and announcements.
 class AiPlannerWidget extends StatefulWidget {
@@ -40,20 +41,11 @@ class _AiPlannerWidgetState extends State<AiPlannerWidget> {
   }
 
   int _calculateTriageScore(SurvivorRecord s) {
-    if (s.status == SurvivorStatus.critical) {
-      return s.name == 'John Doe' ? 98 : 95;
-    } else if (s.status == SurvivorStatus.injured) {
-      return 85;
-    } else {
-      return 20;
-    }
+    return HeuristicEngine.calculateTriageScore(s);
   }
 
   double _calculateDistance(SurvivorRecord s) {
-    if (s.name == 'John Doe') return 1.2;
-    if (s.name == 'Jane Smith') return 1.5;
-    if (s.name == 'Budi Santoso') return 2.1;
-    return 3.4;
+    return HeuristicEngine.calculateDistanceFromBaseCamp(s.latitude, s.longitude);
   }
 
   @override

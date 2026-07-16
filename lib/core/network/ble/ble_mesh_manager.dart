@@ -29,6 +29,7 @@ class BleMeshManager {
   final ValueNotifier<int> cooldownSecondsNotifier = ValueNotifier<int>(0);
 
   bool _isMeshRunning = false;
+  bool _isRescuer = false;
   Timer? _cycleTimer;
   Timer? _countdownTimer;
   int _waitingCountdown = 30;
@@ -76,17 +77,18 @@ class BleMeshManager {
 
   Future<void> _updateOtherDevicesCount() async {
     final all = await LocalDB().getAllSurvivors();
-    final myId = await LocalDB().getOrCreateDeviceUUID();
+    final myId = await LocalDB().getOrCreateDeviceUUID(isRescuer: _isRescuer);
     final otherDevices = all.where((s) => s.id != myId).toList();
     otherDevicesCountNotifier.value = otherDevices.length;
     debugPrint('Mesh: Counted ${otherDevices.length} other devices in local DB.');
   }
 
   // Start the BLE Dynamic Role-Switching Cycle
-  Future<void> startMeshCycle() async {
+  Future<void> startMeshCycle({bool isRescuer = false}) async {
     if (_isMeshRunning) return;
     _isMeshRunning = true;
-    debugPrint('Mesh: Starting Resku BLE Ad-Hoc Mesh Sync Cycle...');
+    _isRescuer = isRescuer;
+    debugPrint('Mesh: Starting Resku BLE Ad-Hoc Mesh Sync Cycle (isRescuer: $_isRescuer)...');
     
     // Trigger runtime permissions prompt
     await requestBlePermissions();
@@ -262,9 +264,9 @@ class BleMeshManager {
       final name = names[rnd.nextInt(names.length)];
       final id = 'survivor_peer_${name.toLowerCase().replaceAll(' ', '_')}_${rnd.nextInt(1000)}';
 
-      // Generate coordinates around base Jakarta location
-      final lat = -6.2000 + (rnd.nextDouble() - 0.5) * 0.05;
-      final lon = 106.8166 + (rnd.nextDouble() - 0.5) * 0.05;
+      // Generate coordinates within dashboard map bounds (-6.2050 to -6.2150 Lat, 106.8400 to 106.8550 Lng)
+      final lat = -6.2100 + (rnd.nextDouble() - 0.5) * 0.008;
+      final lon = 106.8475 + (rnd.nextDouble() - 0.5) * 0.012;
 
       list.add(SurvivorRecord(
         id: id,
@@ -292,11 +294,11 @@ class BleMeshManager {
       debugPrint('Mesh Real BLE: Setting up Peripheral GATT services...');
       await BlePeripheral.initialize();
 
-      final myId = await LocalDB().getOrCreateDeviceUUID();
+      final myId = await LocalDB().getOrCreateDeviceUUID(isRescuer: _isRescuer);
       final all = await LocalDB().getAllSurvivors();
       final localRecord = all.firstWhere((s) => s.id == myId, orElse: () => SurvivorRecord(
         id: myId,
-        name: 'Anonymous',
+        name: _isRescuer ? 'Rescuer Mule' : 'Anonymous',
         latitude: -6.2000,
         longitude: 106.8166,
         status: SurvivorStatus.safe,
@@ -403,9 +405,10 @@ class BleMeshManager {
       });
 
       // Start advertising local name based on ID
+      final prefix = _isRescuer ? 'ReskuRec' : 'Resku';
       await BlePeripheral.startAdvertising(
         services: [serviceUuid],
-        localName: 'Resku-${myId.substring(math.max(0, myId.length - 6))}',
+        localName: '$prefix-${myId.substring(math.max(0, myId.length - 6))}',
       );
 
       _isAdvertising = true;
@@ -442,12 +445,18 @@ class BleMeshManager {
       await _scanSubscription?.cancel();
       _scanSubscription = fbp.FlutterBluePlus.onScanResults.listen((results) async {
         for (fbp.ScanResult r in results) {
+          final name = r.device.platformName;
           final matchesService = r.advertisementData.serviceUuids.any(
             (uuid) => uuid.toString().toLowerCase() == serviceUuid.toLowerCase(),
           );
 
-          if (matchesService || r.device.platformName.startsWith('Resku-')) {
-            debugPrint('Mesh Real BLE: Discovered Resku Peer: ${r.device.platformName} (${r.device.remoteId})');
+          if (matchesService || name.startsWith('Resku-') || name.startsWith('ReskuRec-')) {
+            // Constraint: Rescuer to Rescuer connection is not possible
+            if (_isRescuer && name.startsWith('ReskuRec-')) {
+              debugPrint('Mesh Real BLE: Ignoring peer rescuer device: $name');
+              continue;
+            }
+            debugPrint('Mesh Real BLE: Discovered Resku Peer: $name (${r.device.remoteId})');
             await _stopRealScanning();
             await _connectAndSyncReal(r.device);
             break;
