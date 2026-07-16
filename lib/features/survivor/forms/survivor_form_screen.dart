@@ -5,6 +5,7 @@ import '../../../core/models/rescuer_message.dart';
 import '../../../core/utils/design_system.dart';
 import '../../../core/network/ble/ble_mesh_manager.dart';
 import 'dart:async';
+import 'package:geolocator/geolocator.dart';
 
 class SurvivorFormScreen extends StatefulWidget {
   const SurvivorFormScreen({super.key});
@@ -35,33 +36,7 @@ class _SurvivorFormScreenState extends State<SurvivorFormScreen>
   int _currentPageIndex = 0;
   Timer? _pageTimer;
 
-  // Static mock announcements to display as fallback
-  final List<RescuerMessage> _mockAnnouncements = [
-    RescuerMessage(
-      id: 'mock_1',
-      message:
-          'ALL SURVIVORS: Evacuation Camp active at North Sports Field. Helicopter water drop at 18:00.',
-      timestamp: DateTime.now()
-          .subtract(const Duration(minutes: 10))
-          .millisecondsSinceEpoch,
-    ),
-    RescuerMessage(
-      id: 'mock_2',
-      message:
-          'MEDICAL NOTICE: First aid tent established at Sector 2 grid. Bring ID if possible.',
-      timestamp: DateTime.now()
-          .subtract(const Duration(minutes: 25))
-          .millisecondsSinceEpoch,
-    ),
-    RescuerMessage(
-      id: 'mock_3',
-      message:
-          'COMMUNICATION ADVISORY: Keep your BLE active. Mesh sync is running via passing rescuers.',
-      timestamp: DateTime.now()
-          .subtract(const Duration(hours: 1))
-          .millisecondsSinceEpoch,
-    ),
-  ];
+
 
   @override
   void initState() {
@@ -252,11 +227,7 @@ class _SurvivorFormScreenState extends State<SurvivorFormScreen>
     }
 
     setState(() {
-      if (list.isEmpty) {
-        _announcements = _mockAnnouncements;
-      } else {
-        _announcements = list;
-      }
+      _announcements = list;
     });
   }
 
@@ -304,7 +275,52 @@ class _SurvivorFormScreenState extends State<SurvivorFormScreen>
     }
   }
 
+  Future<Position?> _determinePosition() async {
+    bool serviceEnabled;
+    LocationPermission permission;
+
+    try {
+      serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        return null;
+      }
+
+      permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          return null;
+        }
+      }
+      
+      if (permission == LocationPermission.deniedForever) {
+        return null;
+      } 
+
+      return await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+          timeLimit: Duration(seconds: 5),
+        ),
+      );
+    } catch (e) {
+      debugPrint('Geolocator Error: $e');
+      return null;
+    }
+  }
+
   void _triggerBroadcast() async {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Retrieving location and starting broadcast...'),
+        duration: Duration(seconds: 2),
+      ),
+    );
+
+    final position = await _determinePosition();
+    final double lat = position?.latitude ?? -6.2100; // default/fallback center camp coordinate
+    final double lng = position?.longitude ?? 106.8475;
+
     final name = _nameController.text.trim();
     final db = LocalDB();
     final myId = await db.getOrCreateDeviceUUID();
@@ -319,8 +335,8 @@ class _SurvivorFormScreenState extends State<SurvivorFormScreen>
     final record = SurvivorRecord(
       id: myId,
       name: name.isEmpty ? 'Anonymous' : name,
-      latitude: -6.2000,
-      longitude: 106.8166,
+      latitude: lat,
+      longitude: lng,
       status: _status,
       needs: _needs.join(', '),
       timestamp: DateTime.now().millisecondsSinceEpoch,
@@ -391,24 +407,24 @@ class _SurvivorFormScreenState extends State<SurvivorFormScreen>
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 // 1. Rescuer Announcement Message Box using ReskuCard
-                if (_announcements.isNotEmpty) ...[
-                  Padding(
-                    padding: const EdgeInsets.only(left: 4.0, bottom: 8.0),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.campaign,
-                            color: AppColors.orange, size: 20),
-                        const SizedBox(width: 6),
-                        Text(
-                          'RESCUER BROADCASTS',
-                          style: AppTextStyles.cardTitle.copyWith(
-                            color: AppColors.orange,
-                            fontSize: 11,
-                          ),
+                Padding(
+                  padding: const EdgeInsets.only(left: 4.0, bottom: 8.0),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.campaign,
+                          color: AppColors.orange, size: 20),
+                      const SizedBox(width: 6),
+                      Text(
+                        'RESCUER BROADCASTS',
+                        style: AppTextStyles.cardTitle.copyWith(
+                          color: AppColors.orange,
+                          fontSize: 11,
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
+                ),
+                if (_announcements.isNotEmpty)
                   SizedBox(
                     height: 120,
                     child: Stack(
@@ -472,9 +488,39 @@ class _SurvivorFormScreenState extends State<SurvivorFormScreen>
                         ),
                       ],
                     ),
+                  )
+                else
+                  ReskuCard(
+                    accentColor: AppColors.muted,
+                    padding: const EdgeInsets.all(14.0),
+                    child: SizedBox(
+                      height: 72,
+                      child: Row(
+                        children: [
+                          const Icon(Icons.wifi_off, color: AppColors.muted, size: 28),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: const [
+                                Text(
+                                  'NO BROADCASTS RECEIVED YET',
+                                  style: AppTextStyles.bodyBold,
+                                ),
+                                SizedBox(height: 4),
+                                Text(
+                                  'Connect to the ad-hoc mesh network to sync announcements.',
+                                  style: AppTextStyles.bodyMuted,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
-                  const SizedBox(height: 24),
-                ],
+                const SizedBox(height: 24),
 
                 // 2. Central Big Pulse Connect/Broadcast Button
                 Center(

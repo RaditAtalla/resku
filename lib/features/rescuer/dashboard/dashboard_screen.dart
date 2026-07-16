@@ -75,15 +75,6 @@ class _RescuerDashboardScreenState extends State<RescuerDashboardScreen> {
       setState(() {
         _broadcastLogs.clear();
         _broadcastLogs.addAll(list);
-        if (_broadcastLogs.isEmpty) {
-          final seedMsg = RescuerMessage(
-            id: 'ann-1',
-            message: 'An evac center is open at the North Sports Field. Helicopter drops planned for food and fresh water.',
-            timestamp: DateTime.now().subtract(const Duration(minutes: 10)).millisecondsSinceEpoch,
-          );
-          _broadcastLogs.add(seedMsg);
-          db.saveRescuerMessage(seedMsg);
-        }
       });
     }
   }

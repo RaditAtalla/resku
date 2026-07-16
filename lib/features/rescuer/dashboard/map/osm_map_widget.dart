@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 import '../../../../core/models/survivor_record.dart';
 import '../../../../core/utils/design_system.dart';
 
-// Displays mapped survivor locations on a tactical offline grid canvas.
+// Displays mapped survivor locations on a real interactive OpenStreetMap widget.
 class OsmMapWidget extends StatefulWidget {
   final List<SurvivorRecord> survivors;
   final String? focusedSurvivorId;
@@ -26,27 +28,26 @@ class OsmMapWidget extends StatefulWidget {
 }
 
 class _OsmMapWidgetState extends State<OsmMapWidget> with SingleTickerProviderStateMixin {
+  late MapController _mapController;
   late AnimationController _pulseController;
   late Animation<double> _pulseAnimation;
   final TextEditingController _searchController = TextEditingController();
 
-  // Grid Coordinate range bounds (from HTML mockup)
-  final double _minLat = -6.2050;
-  final double _maxLat = -6.2150;
-  final double _minLng = 106.8400;
-  final double _maxLng = 106.8550;
+  static const double baseCampLat = -6.2100;
+  static const double baseCampLng = 106.8475;
 
   @override
   void initState() {
     super.initState();
+    _mapController = MapController();
     _searchController.text = widget.searchQuery;
-    
+
     // Animation for critical status pulse
     _pulseController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1500),
     )..repeat(reverse: true);
-    
+
     _pulseAnimation = Tween<double>(begin: 3.0, end: 12.0).animate(
       CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
     );
@@ -58,30 +59,27 @@ class _OsmMapWidgetState extends State<OsmMapWidget> with SingleTickerProviderSt
     if (widget.searchQuery != _searchController.text) {
       _searchController.text = widget.searchQuery;
     }
+
+    if (widget.focusedSurvivorId != oldWidget.focusedSurvivorId && widget.focusedSurvivorId != null) {
+      final focusedIndex = widget.survivors.indexWhere((s) => s.id == widget.focusedSurvivorId);
+      if (focusedIndex != -1) {
+        final focusedSurvivor = widget.survivors[focusedIndex];
+        _mapController.move(LatLng(focusedSurvivor.latitude, focusedSurvivor.longitude), 16.0);
+      }
+    }
   }
 
   @override
   void dispose() {
     _pulseController.dispose();
     _searchController.dispose();
+    _mapController.dispose();
     super.dispose();
   }
 
-  // Calculate pixel positions from GPS coordinates
-  Offset _getRelativePosition(double lat, double lng, double width, double height) {
-    // Interpolate latitude: minLat is 0% (top), maxLat is 100% (bottom)
-    double latPct = (lat - _minLat) / (_maxLat - _minLat);
-    // Clamp to 5% to 95% to avoid borders
-    latPct = latPct.clamp(0.05, 0.95);
-    double y = latPct * height;
-
-    // Interpolate longitude: minLng is 0% (left), maxLng is 100% (right)
-    double lngPct = (lng - _minLng) / (_maxLng - _minLng);
-    // Clamp to 5% to 95%
-    lngPct = lngPct.clamp(0.05, 0.95);
-    double x = lngPct * width;
-
-    return Offset(x, y);
+  void _refocusBaseCamp() {
+    _mapController.move(LatLng(baseCampLat, baseCampLng), 15.0);
+    widget.onRefocusBaseCamp();
   }
 
   @override
@@ -103,167 +101,164 @@ class _OsmMapWidgetState extends State<OsmMapWidget> with SingleTickerProviderSt
         borderRadius: BorderRadius.circular(12),
         child: Stack(
           children: [
-            // 1. Tactical Offline Canvas (Light grey background)
+            // 1. Real Interactive OpenStreetMap Widget
             Positioned.fill(
-              child: Container(color: const Color(0xFFE9E9ED)),
-            ),
-
-            // 2. Custom Grid Lines (Clean Strava Grid)
-            Positioned.fill(
-              child: CustomPaint(
-                painter: GridPainter(),
-              ),
-            ),
-
-            // 3. Base Camp Concentric Rings (Concentric Circles at Center)
-            Positioned.fill(
-              child: Center(
-                child: CustomPaint(
-                  painter: RingsPainter(),
+              child: FlutterMap(
+                mapController: _mapController,
+                options: const MapOptions(
+                  initialCenter: LatLng(baseCampLat, baseCampLng),
+                  initialZoom: 15.0,
+                  minZoom: 3.0,
+                  maxZoom: 18.0,
                 ),
-              ),
-            ),
-
-            // 4. Coordinates Label HUD (Bottom Left)
-            Positioned(
-              bottom: 12,
-              left: 12,
-              child: IgnorePointer(
-                child: Text(
-                  'LAT: ${_minLat.toStringAsFixed(4)} TO ${_maxLat.toStringAsFixed(4)}\nLNG: ${_minLng.toStringAsFixed(4)} TO ${_maxLng.toStringAsFixed(4)}',
-                  style: const TextStyle(
-                    fontFamily: 'monospace',
-                    fontSize: 9,
-                    color: AppColors.muted,
-                    height: 1.3,
-                    fontWeight: FontWeight.bold,
+                children: [
+                  TileLayer(
+                    urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                    userAgentPackageName: 'com.resku.app',
                   ),
-                ),
-              ),
-            ),
-
-            // 5. Dynamic Survivor Pin Markers
-            Positioned.fill(
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  final width = constraints.maxWidth;
-                  final height = constraints.maxHeight;
-
-                  return Stack(
-                    children: widget.survivors.map((survivor) {
-                      final offset = _getRelativePosition(
-                        survivor.latitude,
-                        survivor.longitude,
-                        width,
-                        height,
-                      );
-
-                      final isFocused = survivor.id == widget.focusedSurvivorId;
-
-                      // Color based on status
-                      Color pinColor;
-                      bool isCritical = survivor.status == SurvivorStatus.critical;
-                      switch (survivor.status) {
-                        case SurvivorStatus.critical:
-                          pinColor = AppColors.critical;
-                          break;
-                        case SurvivorStatus.injured:
-                          pinColor = AppColors.injured;
-                          break;
-                        case SurvivorStatus.safe:
-                          pinColor = AppColors.safe;
-                          break;
-                      }
-
-                      return Positioned(
-                        left: offset.dx - 40, // offset half width of tooltip/container
-                        top: offset.dy - 20,  // offset slightly upward
-                        width: 80,
-                        height: 55,
-                        child: GestureDetector(
-                          onTap: () => widget.onSurvivorSelected(survivor.id),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              // Pulsing effect or highlight ring
-                              Stack(
-                                alignment: Alignment.center,
-                                children: [
-                                  if (isCritical)
-                                    AnimatedBuilder(
-                                      animation: _pulseAnimation,
-                                      builder: (context, child) {
-                                        return Container(
-                                          width: 14 + _pulseAnimation.value,
-                                          height: 14 + _pulseAnimation.value,
-                                          decoration: BoxDecoration(
-                                            shape: BoxShape.circle,
-                                            color: AppColors.critical.withAlpha(
-                                              (((1.0 - (_pulseAnimation.value / 12.0)).clamp(0.0, 1.0)) * 255).toInt(),
-                                            ),
-                                          ),
-                                        );
-                                      },
-                                    ),
-                                  // Pin dot
-                                  Container(
-                                    width: 14,
-                                    height: 14,
-                                    decoration: BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      color: pinColor,
-                                      border: Border.all(
-                                        color: isFocused ? AppColors.orange : Colors.white,
-                                        width: isFocused ? 3 : 2,
-                                      ),
-                                      boxShadow: const [
-                                        BoxShadow(
-                                          color: Colors.black26,
-                                          blurRadius: 4,
-                                          offset: Offset(0, 2),
-                                        )
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 4),
-                              // Name Label tooltip
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-                                decoration: BoxDecoration(
-                                  color: isFocused ? AppColors.orange : AppColors.black,
-                                  borderRadius: BorderRadius.circular(4),
-                                  boxShadow: const [
-                                    BoxShadow(
-                                      color: Colors.black12,
-                                      blurRadius: 2,
-                                      offset: Offset(0, 1),
-                                    )
-                                  ],
+                  
+                  MarkerLayer(
+                    markers: [
+                      // Base camp marker with concentric rings
+                      Marker(
+                        point: const LatLng(baseCampLat, baseCampLng),
+                        width: 120.0,
+                        height: 120.0,
+                        child: IgnorePointer(
+                          child: Center(
+                            child: Stack(
+                              alignment: Alignment.center,
+                              children: [
+                                CustomPaint(
+                                  size: const Size(120, 120),
+                                  painter: RingsPainter(),
                                 ),
-                                child: Text(
-                                  survivor.name,
-                                  textAlign: TextAlign.center,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 8,
-                                    fontWeight: FontWeight.bold,
+                                Container(
+                                  width: 18,
+                                  height: 18,
+                                  decoration: const BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: AppColors.orange,
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black26,
+                                        blurRadius: 4,
+                                        offset: Offset(0, 2),
+                                      )
+                                    ],
                                   ),
+                                  child: const Icon(Icons.home, color: Colors.white, size: 10),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
                         ),
-                      );
-                    }).toList(),
-                  );
-                },
+                      ),
+
+                      // Survivor markers
+                      ...widget.survivors.map((survivor) {
+                        final isFocused = survivor.id == widget.focusedSurvivorId;
+
+                        Color pinColor;
+                        bool isCritical = survivor.status == SurvivorStatus.critical;
+                        switch (survivor.status) {
+                          case SurvivorStatus.critical:
+                            pinColor = AppColors.critical;
+                            break;
+                          case SurvivorStatus.injured:
+                            pinColor = AppColors.injured;
+                            break;
+                          case SurvivorStatus.safe:
+                            pinColor = AppColors.safe;
+                            break;
+                        }
+
+                        return Marker(
+                          point: LatLng(survivor.latitude, survivor.longitude),
+                          width: 100.0,
+                          height: 70.0,
+                          child: GestureDetector(
+                            onTap: () => widget.onSurvivorSelected(survivor.id),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Stack(
+                                  alignment: Alignment.center,
+                                  children: [
+                                    if (isCritical)
+                                      AnimatedBuilder(
+                                        animation: _pulseAnimation,
+                                        builder: (context, child) {
+                                          return Container(
+                                            width: 14 + _pulseAnimation.value,
+                                            height: 14 + _pulseAnimation.value,
+                                            decoration: BoxDecoration(
+                                              shape: BoxShape.circle,
+                                              color: AppColors.critical.withValues(
+                                                alpha: (1.0 - (_pulseAnimation.value / 12.0)).clamp(0.0, 1.0) * 0.5,
+                                              ),
+                                            ),
+                                          );
+                                        },
+                                      ),
+                                    Container(
+                                      width: 14,
+                                      height: 14,
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        color: pinColor,
+                                        border: Border.all(
+                                          color: isFocused ? AppColors.orange : Colors.white,
+                                          width: isFocused ? 3 : 2,
+                                        ),
+                                        boxShadow: const [
+                                          BoxShadow(
+                                            color: Colors.black26,
+                                            blurRadius: 4,
+                                            offset: Offset(0, 2),
+                                          )
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 4),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: isFocused ? AppColors.orange : AppColors.black,
+                                    borderRadius: BorderRadius.circular(4),
+                                    boxShadow: const [
+                                      BoxShadow(
+                                        color: Colors.black12,
+                                        blurRadius: 2,
+                                        offset: Offset(0, 1),
+                                      )
+                                    ],
+                                  ),
+                                  child: Text(
+                                    survivor.name,
+                                    textAlign: TextAlign.center,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 8,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      }),
+                    ],
+                  ),
+                ],
               ),
             ),
 
-            // 6. Search Bar Overlay (Top Left)
+            // 2. Search Bar Overlay (Top Left)
             Positioned(
               top: 12,
               left: 12,
@@ -313,7 +308,7 @@ class _OsmMapWidgetState extends State<OsmMapWidget> with SingleTickerProviderSt
               ),
             ),
 
-            // 7. Map Controls Overlay (Top Right)
+            // 3. Map Controls Overlay (Top Right)
             Positioned(
               top: 12,
               right: 12,
@@ -322,7 +317,7 @@ class _OsmMapWidgetState extends State<OsmMapWidget> with SingleTickerProviderSt
                 children: [
                   // Refocus Button
                   GestureDetector(
-                    onTap: widget.onRefocusBaseCamp,
+                    onTap: _refocusBaseCamp,
                     child: Container(
                       width: 36,
                       height: 36,
@@ -407,52 +402,25 @@ class _OsmMapWidgetState extends State<OsmMapWidget> with SingleTickerProviderSt
   }
 }
 
-// Custom Painter for drawing the 40px grid lines
-class GridPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = const Color(0x66DFDFE5)
-      ..strokeWidth = 1.0;
-
-    const double step = 40.0;
-
-    // Draw vertical lines
-    for (double x = 0; x < size.width; x += step) {
-      canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
-    }
-
-    // Draw horizontal lines
-    for (double y = 0; y < size.height; y += step) {
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant GridPainter oldDelegate) => false;
-}
-
 // Custom Painter for drawing concentric rings from center base camp
 class RingsPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = const Color(0xB2D1D1D6)
+      ..color = AppColors.orange.withValues(alpha: 0.15)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.0;
+      ..strokeWidth = 1.5;
 
     final center = Offset(size.width / 2, size.height / 2);
 
-    // Concenctric ring sizes matching the HTML style (adjusted for screen bounds)
-    canvas.drawCircle(center, 60.0, paint);
-    canvas.drawCircle(center, 130.0, paint);
-    
-    // Outer dashed/faded ring
+    canvas.drawCircle(center, 25.0, paint);
+    canvas.drawCircle(center, 50.0, paint);
+
     final outerPaint = Paint()
-      ..color = const Color(0x66D1D1D6)
+      ..color = AppColors.orange.withValues(alpha: 0.08)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.0;
-    canvas.drawCircle(center, 210.0, outerPaint);
+    canvas.drawCircle(center, 80.0, outerPaint);
   }
 
   @override

@@ -207,20 +207,13 @@ class BleMeshManager {
     stateNotifier.value = MeshState.receiving;
     await Future.delayed(const Duration(seconds: 2));
 
-    // Generate mock peer records and save to local storage
-    final peerRecords = _generateRandomPeerData();
-    for (var peer in peerRecords) {
-      await LocalDB().saveSurvivorRecord(peer);
-      debugPrint('Mesh Simulator: Saved peer record ${peer.name} (${peer.id}) in local storage.');
-    }
-
     await _updateOtherDevicesCount();
 
     stateNotifier.value = MeshState.success;
     if (onDataSynced != null) {
       onDataSynced!();
     }
-    debugPrint('Mesh Simulator: 1 sync cycle successfully completed.');
+    debugPrint('Mesh Simulator: 1 simulated sync cycle completed.');
 
     await Future.delayed(const Duration(seconds: 2));
     _startCooldown();
@@ -244,42 +237,6 @@ class BleMeshManager {
         _runCycle(); // Start the next cycle (broadcasting and receiving)
       }
     });
-  }
-
-  List<SurvivorRecord> _generateRandomPeerData() {
-    final rnd = math.Random();
-    final names = [
-      'Sarah Jenkins', 'David Chen', 'Maria Lopez', 'James Smith', 
-      'Robert Taylor', 'Linda Miller', 'William Brown', 'Patricia Davis'
-    ];
-    final needsList = [
-      'Food & Water', 'First Aid / Medical', 'Shelter', 'Tools / Warmth',
-      'Food & Water, Shelter', 'First Aid / Medical, Tools / Warmth'
-    ];
-
-    final count = 1 + rnd.nextInt(2); // generate 1 or 2 new devices
-    final List<SurvivorRecord> list = [];
-
-    for (int i = 0; i < count; i++) {
-      final name = names[rnd.nextInt(names.length)];
-      final id = 'survivor_peer_${name.toLowerCase().replaceAll(' ', '_')}_${rnd.nextInt(1000)}';
-
-      // Generate coordinates within dashboard map bounds (-6.2050 to -6.2150 Lat, 106.8400 to 106.8550 Lng)
-      final lat = -6.2100 + (rnd.nextDouble() - 0.5) * 0.008;
-      final lon = 106.8475 + (rnd.nextDouble() - 0.5) * 0.012;
-
-      list.add(SurvivorRecord(
-        id: id,
-        name: name,
-        latitude: lat,
-        longitude: lon,
-        status: SurvivorStatus.values[rnd.nextInt(SurvivorStatus.values.length)],
-        needs: needsList[rnd.nextInt(needsList.length)],
-        timestamp: DateTime.now().millisecondsSinceEpoch,
-        sequenceNumber: 1 + rnd.nextInt(5),
-      ));
-    }
-    return list;
   }
 
   // ==================== REAL ANDROID BLE IMPLEMENTATION ====================
