@@ -17,7 +17,7 @@ This enables rescuers to map survivors, prioritize triage, plan resource distrib
 - **Local Database**: `hive` (Fast, lightweight NoSQL key-value store with strong web compatibility).
 - **Serialization**: `protobuf` (Protocol Buffers) or MessagePack (MsgPack) to serialize location tables and messages into binary format, fitting within BLE MTU constraints.
 - **Mapping (Dashboard)**: `flutter_map` with OpenStreetMap data, utilizing offline tile caching.
-- **AI Core**: Gemini API (Online mode) / Local rule-based heuristic scoring engine (Offline mode).
+- **AI Core**: Local AI Decision Support System (DSS) using quantized Small Language Models (SLMs) and heuristic scoring (100% Offline, low-spec hardware friendly).
 
 ---
 
@@ -122,9 +122,9 @@ A central UI deployed at the rescue command post (on a laptop/desktop) to coordi
 4. **Broadcast Console**:
    - Input field to draft short news announcements (e.g., "Rescue teams deploying near the North River area at 14:00").
    - These are stored in the local database and synced to Mobile Collectors, which will inject them into the survivor mesh.
-5. **AI Rescue Planner**:
-   - **Online Mode**: Sends the current list of survivors, statuses, and locations to the Gemini API with a prompt to generate an optimal rescue sequence, route, and load distribution plan.
-   - **Offline Fallback**: Uses a local priority scoring algorithm to rank survivors (Triage level weight + time elapsed since update - distance from command center).
+5. **Local AI Decision Support System (DSS)**:
+   - **Local Inference**: Runs 100% offline on standard CPU laptops (such as Intel i5) without requiring internet or dedicated GPU hardware.
+   - **Functionality**: Processes population density, recommends required materials/aid items, estimates operational costs (RAB), and analyzes terrain hazards to recommend immediate tactical actions for the SAR commander.
 
 ---
 

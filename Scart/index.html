@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>Resku Design Showcase</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lora (Clean Serif), Inter (Sans) -->
+    <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,500;0,700;1,400&family=Inter:wght@300;400;600;700&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <style>
+        body {
+            background-color: #09090b;
+            color: #f4f4f5;
+            font-family: 'Inter', sans-serif;
+        }
+        .font-title {
+            font-family: 'Lora', Georgia, serif;
+        }
+    </style>
+</head>
+<body class="h-screen w-screen flex flex-col items-center justify-center p-6 relative overflow-hidden">
+    <!-- Grid BG -->
+    <div class="absolute inset-0 bg-[linear-gradient(rgba(245,158,11,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(245,158,11,0.02)_1px,transparent_1px)] bg-[size:40px_40px] pointer-events-none"></div>
+    <div class="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_30%,#09090b_85%)] pointer-events-none"></div>
+
+    <div class="z-10 text-center max-w-xl flex flex-col items-center gap-6">
+        <span class="material-symbols-outlined text-brand-orange-yellow text-6xl text-amber-500 animate-pulse">sensors</span>
+        <div>
+            <h1 class="font-title font-bold text-4xl text-amber-500 tracking-wide mb-2">Resku Interactive Prototype</h1>
+            <p class="text-zinc-400 text-sm leading-relaxed">
+                Choose between the two gamified, modern dark mode interfaces built strictly to match your color schemes, typography, flat illustration style, and PRD features.
+            </p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 w-full mt-4">
+            <!-- Card 1: Web Dashboard -->
+            <a href="dashboard.html" class="group flex flex-col items-start p-5 bg-zinc-900/60 border border-zinc-800 hover:border-amber-500/50 rounded-2xl transition-all duration-300 hover:shadow-lg hover:shadow-amber-500/5 text-left">
+                <span class="material-symbols-outlined text-amber-500 text-3xl mb-3 group-hover:scale-110 transition-transform">dashboard</span>
+                <h3 class="font-title font-bold text-lg text-zinc-100 group-hover:text-amber-500 transition-colors">1. Rescuer Web Dashboard</h3>
+                <p class="text-xs text-zinc-400 mt-2 leading-relaxed">
+                    Interactive Command Center layout with live map coordinates, survivor databases, filter controls, heuristic AI prioritization, and mesh broadcast consoles.
+                </p>
+                <div class="mt-4 flex items-center text-xs font-semibold text-amber-500 gap-1">
+                    Launch Desktop App
+                    <span class="material-symbols-outlined text-sm">arrow_forward</span>
+                </div>
+            </a>
+
+            <!-- Card 2: Mobile App -->
+            <a href="mobile.html" class="group flex flex-col items-start p-5 bg-zinc-900/60 border border-zinc-800 hover:border-amber-500/50 rounded-2xl transition-all duration-300 hover:shadow-lg hover:shadow-amber-500/5 text-left">
+                <span class="material-symbols-outlined text-amber-500 text-3xl mb-3 group-hover:scale-110 transition-transform">smartphone</span>
+                <h3 class="font-title font-bold text-lg text-zinc-100 group-hover:text-amber-500 transition-colors">2. Mobile App (Onboarding & Scan)</h3>
+                <p class="text-xs text-zinc-400 mt-2 leading-relaxed">
+                    Swipe through the 3 onboarding tutorial screens matching your flat illustrations exactly. Enter the scanner app to simulate BLE radar sweeps and data collection!
+                </p>
+                <div class="mt-4 flex items-center text-xs font-semibold text-amber-500 gap-1">
+                    Launch Mobile App
+                    <span class="material-symbols-outlined text-sm">arrow_forward</span>
+                </div>
+            </a>
+        </div>
+
+        <p class="text-[10px] text-zinc-600 font-mono mt-6 uppercase tracking-wider">
+            Built using HTML / Tailwind CSS / Vanilla JS • Custom SVG Illustrations
+        </p>
+    </div>
+</body>
+</html>

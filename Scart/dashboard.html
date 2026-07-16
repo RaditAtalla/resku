@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>Resku Command Center - Tactical Dashboard</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <!-- Google Fonts: Inter (Sans), JetBrains Mono -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        strava: {
+                            orange: "#FC5200",
+                            darkOrange: "#E43F00",
+                            black: "#1F1F22",
+                            charcoal: "#2F2F35",
+                            gray: "#F7F7FA",
+                            border: "#E5E5E9",
+                            muted: "#6D6D78",
+                            white: "#FFFFFF"
+                        }
+                    },
+                    fontFamily: {
+                        sans: ["Inter", "sans-serif"],
+                        mono: ["JetBrains Mono", "monospace"]
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #F7F7FA;
+            color: #1F1F22;
+            font-family: 'Inter', sans-serif;
+        }
+        /* Custom scrollbar matching Strava style */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #F7F7FA;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #D8D8DF;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #FC5200;
+        }
+        /* Flat tactical card styling (Minimalist Strava style) */
+        .strava-card {
+            background: #FFFFFF;
+            border: 1px solid #E5E5E9;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+        /* Pulse for Critical survivors without high tech glowing effect */
+        .pulse-critical {
+            animation: pulse-critical-flat 1.8s infinite ease-in-out;
+        }
+        @keyframes pulse-critical-flat {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(225, 29, 72, 0.6); }
+            50% { box-shadow: 0 0 0 8px rgba(225, 29, 72, 0); }
+        }
+    </style>
+</head>
+<body class="h-screen w-screen overflow-hidden flex flex-col relative select-none">
+
+    <!-- HEADER / NAVIGATION (Minimalist Strava style) -->
+    <header class="h-16 border-b border-strava-border bg-strava-white px-6 flex items-center justify-between z-10 shrink-0">
+        <div class="flex items-center gap-3">
+            <span class="material-symbols-outlined text-strava-orange text-3xl">sensors</span>
+            <div>
+                <h1 class="font-extrabold text-lg text-strava-black uppercase tracking-tight">
+                    RESKU <span class="text-strava-orange">COMMAND</span>
+                </h1>
+                <p class="text-[9px] font-mono text-strava-muted uppercase tracking-widest">Base Post Tactical Dashboard • Sector: Alpha-7</p>
+            </div>
+        </div>
+
+        <!-- Right System Indicators (Mesh and Sync buttons removed) -->
+        <div class="flex items-center gap-4">
+            <div class="text-[10px] font-mono text-strava-muted uppercase tracking-wider">
+                System Time: <span id="header-time" class="font-bold text-strava-black">18:20</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN BODY CONTAINER -->
+    <main class="flex-1 flex gap-4 p-4 overflow-hidden z-10 relative">
+
+        <!-- LEFT PANEL (Tactical Map & Live Data) -->
+        <section class="flex-[3] flex flex-col gap-4 h-full">
+
+            <!-- Interactive Map Widget -->
+            <div class="strava-card rounded-xl flex-[3] flex flex-col overflow-hidden relative">
+                <!-- Map Tools Overlay -->
+                <div class="absolute top-3 left-3 z-10 flex gap-2">
+                    <div class="flex items-center bg-strava-white border border-strava-border rounded-lg px-3 py-1.5 shadow-sm">
+                        <span class="material-symbols-outlined text-strava-muted text-sm mr-2">search</span>
+                        <input id="map-search" oninput="filterMapAndTable()" class="bg-transparent border-none text-xs text-strava-black placeholder-strava-muted/70 focus:ring-0 p-0 outline-none w-52" placeholder="Search survivors by name..." type="text"/>
+                    </div>
+                </div>
+                <div class="absolute top-3 right-3 z-10 flex flex-col gap-2">
+                    <button onclick="resetMapZoom()" class="p-2 bg-strava-white border border-strava-border rounded-lg text-strava-black hover:text-strava-orange hover:border-strava-orange/40 transition-all shadow-sm flex items-center justify-center">
+                        <span class="material-symbols-outlined text-[18px]">center_focus_strong</span>
+                    </button>
+                    <div class="bg-strava-white border border-strava-border rounded-lg p-2 flex flex-col gap-1 text-[10px] text-strava-muted shadow-sm">
+                        <div class="flex items-center gap-1.5"><span class="h-2.5 w-2.5 rounded-full bg-red-600"></span> Critical</div>
+                        <div class="flex items-center gap-1.5"><span class="h-2.5 w-2.5 rounded-full bg-amber-500"></span> Injured</div>
+                        <div class="flex items-center gap-1.5"><span class="h-2.5 w-2.5 rounded-full bg-emerald-500"></span> Safe</div>
+                    </div>
+                </div>
+
+                <!-- Simulated Peta Canvas -->
+                <div class="flex-1 bg-[#E9E9ED] relative overflow-hidden flex items-center justify-center">
+                    <!-- Map Grids (Clean Minimalist Strava Style) -->
+                    <div class="absolute inset-0 bg-[linear-gradient(#DFDFE5_1px,transparent_1px),linear-gradient(90deg,#DFDFE5_1px,transparent_1px)] bg-[size:40px_40px] pointer-events-none opacity-40"></div>
+
+                    <!-- Base Camp Ring Indicator -->
+                    <div class="absolute w-[360px] h-[360px] border border-[#D1D1D6] rounded-full pointer-events-none flex items-center justify-center">
+                        <div class="absolute w-[200px] h-[200px] border border-[#D1D1D6] rounded-full"></div>
+                        <div class="absolute w-[80px] h-[80px] border border-[#D1D1D6]/70 rounded-full"></div>
+                    </div>
+
+                    <!-- Dynamic Map Pins Container -->
+                    <div id="map-pins-container" class="absolute inset-0"></div>
+
+                    <!-- Grid Label HUD -->
+                    <div class="absolute bottom-4 left-4 font-mono text-[9px] text-strava-muted leading-relaxed pointer-events-none">
+                        LAT: -6.2050 TO -6.2150<br/>
+                        LNG: 106.8400 TO 106.8550
+                    </div>
+                </div>
+            </div>
+
+            <!-- Table Panel -->
+            <div class="strava-card rounded-xl flex-[2] p-4 flex flex-col overflow-hidden">
+                <div class="flex justify-between items-center mb-3 shrink-0">
+                    <div class="flex items-center gap-2">
+                        <h2 class="font-extrabold text-sm text-strava-black uppercase tracking-tight">Survivor Database</h2>
+                        <span class="text-[9px] bg-strava-gray text-strava-muted border border-strava-border px-2 py-0.5 rounded font-mono font-semibold" id="survivor-count">4 Records Found</span>
+                    </div>
+
+                    <!-- Filter chips -->
+                    <div class="flex gap-1.5">
+                        <button onclick="setFilter('all')" id="btn-filter-all" class="text-[10px] font-bold px-3 py-1 rounded bg-strava-orange text-white border border-strava-orange transition-all">All</button>
+                        <button onclick="setFilter('critical')" id="btn-filter-critical" class="text-[10px] font-bold px-3 py-1 rounded bg-strava-white text-red-600 border border-strava-border hover:border-red-600/30 transition-all">Critical</button>
+                        <button onclick="setFilter('injured')" id="btn-filter-injured" class="text-[10px] font-bold px-3 py-1 rounded bg-strava-white text-amber-600 border border-strava-border hover:border-amber-600/30 transition-all">Injured</button>
+                        <button onclick="setFilter('safe')" id="btn-filter-safe" class="text-[10px] font-bold px-3 py-1 rounded bg-strava-white text-emerald-600 border border-strava-border hover:border-emerald-600/30 transition-all">Safe</button>
+                    </div>
+                </div>
+
+                <!-- Scrollable Table -->
+                <div class="flex-1 overflow-y-auto border border-strava-border rounded-lg">
+                    <table class="w-full text-left text-xs border-collapse">
+                        <thead class="sticky top-0 bg-strava-gray text-strava-muted font-bold border-b border-strava-border uppercase text-[9px]">
+                            <tr>
+                                <th class="py-2.5 px-3">Name</th>
+                                <th class="py-2.5 px-3">Triage status</th>
+                                <th class="py-2.5 px-3">Primary Needs</th>
+                                <th class="py-2.5 px-3 text-right">Coordinates</th>
+                                <th class="py-2.5 px-3 text-right">Timestamp</th>
+                                <th class="py-2.5 px-3 text-center">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="survivor-rows" class="divide-y divide-strava-border bg-white text-strava-black">
+                            <!-- Injected dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- RIGHT PANEL (AI Decision Hub & Broadcast Control) -->
+        <section class="flex-1 min-w-[340px] flex flex-col gap-4 h-full">
+
+            <!-- AI Action Planner -->
+            <div class="strava-card rounded-xl flex-[3] p-4 flex flex-col overflow-hidden relative">
+                <div class="flex items-center justify-between mb-3 shrink-0">
+                    <div class="flex items-center gap-2">
+                        <span class="material-symbols-outlined text-strava-orange">psychology</span>
+                        <h3 class="font-extrabold text-sm text-strava-black uppercase tracking-tight">AI Priority Rescue Plan</h3>
+                    </div>
+                    <span class="text-[9px] bg-strava-gray border border-strava-border px-2 py-0.5 rounded text-strava-muted uppercase font-mono font-bold">Triage Score</span>
+                </div>
+
+                <div class="mb-4 shrink-0">
+                    <button onclick="generateAIPlan()" class="w-full bg-strava-orange hover:bg-strava-darkOrange text-white font-bold text-xs py-2 px-4 rounded-lg flex items-center justify-center gap-1.5 transition-all active:scale-95">
+                        <span class="material-symbols-outlined text-sm">auto_awesome</span>
+                        Generate Rescue Priority
+                    </button>
+                </div>
+
+                <!-- Heuristic Loading Screen Overlay -->
+                <div id="ai-loading" class="hidden flex-1 flex flex-col items-center justify-center gap-3 text-xs text-strava-muted">
+                    <span class="material-symbols-outlined text-3xl text-strava-orange animate-spin">refresh</span>
+                    <span class="font-mono text-[9px] text-center uppercase tracking-wide">Calculating priority queue using rule-based Heuristics...</span>
+                </div>
+
+                <!-- Rescue Priority list -->
+                <div id="ai-results" class="flex-1 overflow-y-auto flex flex-col gap-3 pr-1">
+                    <div class="text-center py-10 text-strava-muted/70 text-xs flex flex-col items-center gap-2">
+                        <span class="material-symbols-outlined text-3xl text-strava-muted">construction</span>
+                        <p class="max-w-[200px] leading-relaxed">Calculate dispatch queue priority based on triage urgency, location distance, and time elapsed.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mesh Broadcast console -->
+            <div class="strava-card rounded-xl flex-[2] p-4 flex flex-col overflow-hidden relative">
+                <div class="flex items-center gap-2 mb-2.5 shrink-0">
+                    <span class="material-symbols-outlined text-strava-orange">campaign</span>
+                    <h3 class="font-extrabold text-sm text-strava-black uppercase tracking-tight">BLE Mesh Broadcast Console</h3>
+                </div>
+                <p class="text-[10px] text-strava-muted mb-2 shrink-0 leading-relaxed">
+                    Announcements will propagate dynamically through ad-hoc mobile networks.
+                </p>
+
+                <!-- Input area -->
+                <div class="flex-1 flex flex-col relative min-h-[70px]">
+                    <textarea id="broadcast-textarea" oninput="updateCharCount()" class="w-full flex-1 bg-white border border-strava-border focus:border-strava-orange focus:ring-1 focus:ring-strava-orange rounded-lg p-2.5 text-xs text-strava-black placeholder-strava-muted/50 resize-none font-sans outline-none" placeholder="Enter broadcast message (e.g., Evacuation post set up at Sector 7...)"></textarea>
+                    <div id="char-counter" class="absolute bottom-2 right-2.5 text-[9px] font-mono text-strava-muted">0 / 160</div>
+                </div>
+
+                <div class="mt-3 shrink-0">
+                    <button onclick="sendBroadcast()" class="w-full bg-strava-black hover:bg-strava-charcoal text-white font-bold text-xs py-2 px-4 rounded-lg flex items-center justify-center gap-1.5 transition-all active:scale-95">
+                        <span class="material-symbols-outlined text-sm">rss_feed</span>
+                        Transmit to BLE Mesh
+                    </button>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- FLOATING POPUP NOTIFICATIONS (Clean Light mode style) -->
+    <div id="notification" class="absolute top-20 left-1/2 -translate-x-1/2 bg-strava-black text-white px-5 py-3 rounded-lg shadow-xl z-50 text-xs font-bold flex items-center gap-3 transition-all duration-300 transform -translate-y-24 opacity-0 pointer-events-none border border-strava-charcoal">
+        <span class="material-symbols-outlined text-strava-orange" id="notification-icon">sensors</span>
+        <span id="notification-text">Database Sync Completed</span>
+    </div>
+
+    <!-- Details modal for selected survivor -->
+    <div id="survivor-modal" class="hidden absolute inset-0 bg-strava-black/40 backdrop-blur-sm z-50 flex items-center justify-center">
+        <div class="bg-white rounded-xl p-5 w-80 shadow-2xl flex flex-col gap-4 border border-strava-border">
+            <div class="flex justify-between items-start">
+                <div>
+                    <h4 id="modal-name" class="font-extrabold text-base text-strava-black">John Doe</h4>
+                    <span id="modal-badge" class="bg-red-500/10 text-red-600 border border-red-500/30 px-2 py-0.5 rounded text-[9px] uppercase font-black mt-1 inline-block">Critical</span>
+                </div>
+                <button onclick="closeModal()" class="text-strava-muted hover:text-strava-black">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+            <div class="text-xs space-y-2 text-strava-black">
+                <div><span class="text-strava-muted font-mono uppercase text-[9px] font-bold">Last Update:</span> <span id="modal-time" class="font-semibold">5 mins ago</span></div>
+                <div><span class="text-strava-muted font-mono uppercase text-[9px] font-bold">Coordinates:</span> <span id="modal-coord" class="font-mono text-strava-orange">-6.2088, 106.8456</span></div>
+                <div><span class="text-strava-muted font-mono uppercase text-[9px] font-bold">Reported Needs:</span> <p id="modal-needs" class="text-strava-black mt-1 bg-strava-gray p-2 rounded border border-strava-border">First Aid, Water, Fracture Splint</p></div>
+            </div>
+            <div class="flex gap-2">
+                <button onclick="closeModal()" class="flex-1 border border-strava-border text-strava-black text-xs font-bold py-2 rounded-lg hover:bg-strava-gray transition-all">Dismiss</button>
+                <button onclick="deployTeamFromModal()" class="flex-1 bg-strava-orange text-white text-xs font-bold py-2 rounded-lg hover:bg-strava-darkOrange transition-all active:scale-95">Deploy Team</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT LOGIC FOR INTERACTIVITY AND SYNC -->
+    <script>
+        // Default schema values
+        const defaultSurvivors = [
+            { id: 'john', name: 'John Doe', status: 'critical', needs: 'First Aid, Water, Fracture Splint', lat: '-6.2088', lng: '106.8456', time: '5 mins ago', score: 98, distance: 1.2 },
+            { id: 'jane', name: 'Jane Smith', status: 'injured', needs: 'Blankets, Thermal Wear, Water', lat: '-6.2100', lng: '106.8480', time: '12 mins ago', score: 85, distance: 1.5 },
+            { id: 'budi', name: 'Budi Santoso', status: 'critical', needs: 'Asthma Inhaler, Oxygen', lat: '-6.2112', lng: '106.8415', time: '18 mins ago', score: 95, distance: 2.1 },
+            { id: 'alice', name: 'Alice Green', status: 'safe', needs: 'None (Holding Shelter Area)', lat: '-6.2135', lng: '106.8522', time: '22 mins ago', score: 42, distance: 3.4 }
+        ];
+
+        const defaultAnnouncements = [
+            { id: 'ann-1', message: 'An evac center is open at the North Sports Field. Helicopter drops planned for food and fresh water.', time: '10 mins ago' }
+        ];
+
+        // Database accessors
+        function getSurvivors() {
+            const stored = localStorage.getItem('resku_survivors');
+            if (!stored) {
+                localStorage.setItem('resku_survivors', JSON.stringify(defaultSurvivors));
+                return defaultSurvivors;
+            }
+            return JSON.parse(stored);
+        }
+
+        function saveSurvivors(list) {
+            localStorage.setItem('resku_survivors', JSON.stringify(list));
+        }
+
+        function getAnnouncements() {
+            const stored = localStorage.getItem('resku_announcements');
+            if (!stored) {
+                localStorage.setItem('resku_announcements', JSON.stringify(defaultAnnouncements));
+                return defaultAnnouncements;
+            }
+            return JSON.parse(stored);
+        }
+
+        // Global states
+        let currentFilter = 'all';
+        let activeFocusedId = null;
+
+        // Map projection coordinates mapping
+        function getPinStyle(lat, lng) {
+            // lat: -6.2050 is 0% (top), -6.2150 is 100% (bottom)
+            const minLat = -6.2050;
+            const maxLat = -6.2150;
+            const latPct = ((parseFloat(lat) - minLat) / (maxLat - minLat)) * 100;
+            
+            // lng: 106.8400 is 0% (left), 106.8550 is 100% (right)
+            const minLng = 106.8400;
+            const maxLng = 106.8550;
+            const lngPct = ((parseFloat(lng) - minLng) / (maxLng - minLng)) * 100;
+            
+            return {
+                top: `${Math.max(5, Math.min(95, latPct))}%`,
+                left: `${Math.max(5, Math.min(95, lngPct))}%`
+            };
+        }
+
+        // Render Table and Map Pin markers dynamically
+        function renderTableAndMap() {
+            const list = getSurvivors();
+            const query = document.getElementById('map-search').value.toLowerCase();
+            const rowsContainer = document.getElementById('survivor-rows');
+            const pinsContainer = document.getElementById('map-pins-container');
+
+            rowsContainer.innerHTML = '';
+            pinsContainer.innerHTML = '';
+
+            let visibleCount = 0;
+
+            list.forEach(s => {
+                const matchesSearch = s.name.toLowerCase().includes(query);
+                const matchesFilter = (currentFilter === 'all' || s.status === currentFilter);
+
+                if (matchesSearch && matchesFilter) {
+                    visibleCount++;
+
+                    // Create table row
+                    let badgeClass = 'bg-emerald-100 text-emerald-800 border border-emerald-200';
+                    if (s.status === 'critical') badgeClass = 'bg-red-100 text-red-800 border border-red-200';
+                    if (s.status === 'injured') badgeClass = 'bg-amber-100 text-amber-800 border border-amber-200';
+
+                    const tr = document.createElement('tr');
+                    tr.className = 'hover:bg-strava-gray transition-all text-strava-black';
+                    tr.innerHTML = `
+                        <td class="py-2.5 px-3 font-semibold">${s.name}</td>
+                        <td class="py-2.5 px-3">
+                            <span class="${badgeClass} px-2 py-0.5 rounded text-[9px] uppercase font-extrabold">${s.status}</span>
+                        </td>
+                        <td class="py-2.5 px-3 text-strava-muted">${s.needs}</td>
+                        <td class="py-2.5 px-3 text-right font-mono text-[11px] text-strava-muted">${s.lat}, ${s.lng}</td>
+                        <td class="py-2.5 px-3 text-right font-mono text-strava-muted">${s.time}</td>
+                        <td class="py-2.5 px-3 text-center">
+                            <button onclick="focusSurvivor('${s.id}')" class="border border-strava-border hover:bg-strava-orange hover:text-white hover:border-strava-orange text-strava-black px-2.5 py-1 rounded text-[10px] font-bold transition-all">Locate</button>
+                        </td>
+                    `;
+                    rowsContainer.appendChild(tr);
+
+                    // Create map pin
+                    const style = getPinStyle(s.lat, s.lng);
+                    const pinDiv = document.createElement('div');
+                    pinDiv.id = `pin-${s.id}`;
+                    pinDiv.className = 'absolute flex flex-col items-center group cursor-pointer';
+                    pinDiv.style.top = style.top;
+                    pinDiv.style.left = style.left;
+                    pinDiv.onclick = () => focusSurvivor(s.id);
+
+                    let pinColor = 'bg-emerald-500';
+                    let pulseClass = '';
+                    if (s.status === 'critical') {
+                        pinColor = 'bg-red-600';
+                        pulseClass = 'pulse-critical';
+                    } else if (s.status === 'injured') {
+                        pinColor = 'bg-amber-500';
+                    }
+
+                    pinDiv.innerHTML = `
+                        <div class="w-3.5 h-3.5 ${pinColor} rounded-full border-2 border-white flex items-center justify-center shadow-md ${pulseClass}">
+                        </div>
+                        <div class="absolute top-5 bg-strava-black text-white text-[9px] font-bold px-2 py-0.5 rounded whitespace-nowrap shadow opacity-80 group-hover:opacity-100 transition-opacity">
+                            ${s.name}
+                        </div>
+                    `;
+                    pinsContainer.appendChild(pinDiv);
+                }
+            });
+
+            document.getElementById('survivor-count').textContent = `${visibleCount} Records Found`;
+        }
+
+        // Filter triggers
+        function setFilter(filter) {
+            currentFilter = filter;
+            ['all', 'critical', 'injured', 'safe'].forEach(f => {
+                const btn = document.getElementById(`btn-filter-${f}`);
+                if (f === filter) {
+                    btn.className = `text-[10px] font-bold px-3 py-1 rounded bg-strava-orange text-white border border-strava-orange transition-all`;
+                } else {
+                    let textCol = 'text-strava-black border-strava-border bg-white';
+                    if (f === 'critical') textCol = 'text-red-600 border-strava-border bg-white';
+                    if (f === 'injured') textCol = 'text-amber-600 border-strava-border bg-white';
+                    if (f === 'safe') textCol = 'text-emerald-600 border-strava-border bg-white';
+                    btn.className = `text-[10px] font-bold px-3 py-1 rounded ${textCol} border hover:border-strava-orange/40 transition-all`;
+                }
+            });
+            renderTableAndMap();
+        }
+
+        function filterMapAndTable() {
+            renderTableAndMap();
+        }
+
+        // Show toast notification
+        function showToast(text, icon = 'sensors') {
+            const toast = document.getElementById('notification');
+            document.getElementById('notification-icon').textContent = icon;
+            document.getElementById('notification-text').textContent = text;
+            
+            toast.classList.remove('-translate-y-24', 'opacity-0', 'pointer-events-none');
+            toast.classList.add('translate-y-0', 'opacity-100');
+
+            setTimeout(() => {
+                toast.classList.add('-translate-y-24', 'opacity-0', 'pointer-events-none');
+                toast.classList.remove('translate-y-0', 'opacity-100');
+            }, 3000);
+        }
+
+        // Zoom Out/Reset Map zoom (simulate)
+        function resetMapZoom() {
+            showToast('Map coordinates refocused onto base camp', 'my_location');
+        }
+
+        // Focus a survivor pin and open detailed modal
+        function focusSurvivor(id) {
+            const list = getSurvivors();
+            const s = list.find(x => x.id === id);
+            if (!s) return;
+
+            activeFocusedId = id;
+            document.getElementById('modal-name').textContent = s.name;
+            document.getElementById('modal-needs').textContent = s.needs;
+            document.getElementById('modal-coord').textContent = `${s.lat}, ${s.lng}`;
+            document.getElementById('modal-time').textContent = s.time;
+            
+            const badge = document.getElementById('modal-badge');
+            badge.textContent = s.status;
+            if (s.status === 'critical') {
+                badge.className = 'bg-red-100 text-red-800 border border-red-200 px-2 py-0.5 rounded text-[9px] uppercase font-black';
+            } else if (s.status === 'injured') {
+                badge.className = 'bg-amber-100 text-amber-800 border border-amber-200 px-2 py-0.5 rounded text-[9px] uppercase font-black';
+            } else {
+                badge.className = 'bg-emerald-100 text-emerald-800 border border-emerald-200 px-2 py-0.5 rounded text-[9px] uppercase font-black';
+            }
+
+            document.getElementById('survivor-modal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('survivor-modal').classList.add('hidden');
+        }
+
+        // Deploy Team from Modal
+        function deployTeamFromModal() {
+            closeModal();
+            const list = getSurvivors();
+            const sIndex = list.findIndex(x => x.id === activeFocusedId);
+            if (sIndex !== -1) {
+                showToast(`Rescue unit dispatched to locate ${list[sIndex].name}`, 'flight_takeoff');
+                // Update status to Safe
+                list[sIndex].status = 'safe';
+                list[sIndex].needs = 'None (Rescue unit arrived)';
+                list[sIndex].time = 'Just now';
+                list[sIndex].score = 20; 
+                saveSurvivors(list);
+                renderTableAndMap();
+            }
+        }
+
+        // AI Priority Planner generator algorithm simulation
+        function generateAIPlan() {
+            const btn = document.querySelector('#ai-loading');
+            const results = document.querySelector('#ai-results');
+            
+            results.classList.add('hidden');
+            btn.classList.remove('hidden');
+
+            setTimeout(() => {
+                btn.classList.add('hidden');
+                results.classList.remove('hidden');
+
+                const list = getSurvivors();
+                const activeSurvivors = list.filter(x => x.status !== 'safe');
+
+                if (activeSurvivors.length === 0) {
+                    results.innerHTML = `
+                        <div class="text-center py-10 text-strava-muted/70 text-xs flex flex-col items-center gap-2">
+                            <span class="material-symbols-outlined text-3xl text-emerald-600">check_circle</span>
+                            All survivors are safe. Sector cleared!
+                        </div>
+                    `;
+                    return;
+                }
+
+                // Sort by priority score
+                const sorted = activeSurvivors.sort((a,b) => b.score - a.score);
+
+                let listHtml = '';
+                sorted.forEach(s => {
+                    let borderCol = 'border-strava-border';
+                    let accentCol = 'bg-emerald-500';
+                    let textAccent = 'text-emerald-600';
+                    let buttonStyle = 'border border-strava-border text-strava-black hover:bg-strava-orange hover:text-white hover:border-strava-orange';
+
+                    if (s.status === 'critical') {
+                        borderCol = 'border-red-200';
+                        accentCol = 'bg-red-600';
+                        textAccent = 'text-red-600';
+                        buttonStyle = 'bg-strava-orange text-white hover:bg-strava-darkOrange';
+                    } else if (s.status === 'injured') {
+                        borderCol = 'border-amber-200';
+                        accentCol = 'bg-amber-500';
+                        textAccent = 'text-amber-600';
+                    }
+
+                    listHtml += `
+                        <div class="bg-white rounded-lg p-3 border ${borderCol} relative overflow-hidden group">
+                            <div class="absolute left-0 top-0 bottom-0 w-1.5 ${accentCol}"></div>
+                            <div class="flex justify-between items-start mb-2 ml-2">
+                                <div>
+                                    <div class="text-xs font-bold text-strava-black">${s.name}</div>
+                                    <div class="text-[10px] text-strava-muted font-mono">Dist: ${s.distance}km • Needs: ${s.needs.substring(0, 18)}...</div>
+                                </div>
+                                <div class="text-right">
+                                    <div class="${textAccent} font-mono font-bold text-xs">${s.score}</div>
+                                    <div class="text-[8px] text-strava-muted uppercase font-mono tracking-tighter">Triage Score</div>
+                                </div>
+                            </div>
+                            <button onclick="deployAsset('${s.id}')" class="w-full mt-1.5 ${buttonStyle} py-1.5 rounded text-[10px] font-bold transition-all active:scale-95 flex items-center justify-center gap-1.5">
+                                <span class="material-symbols-outlined text-[12px]">flight_takeoff</span>
+                                Deploy Rescue Unit
+                            </button>
+                        </div>
+                    `;
+                });
+
+                results.innerHTML = listHtml;
+                showToast('AI Optimal Rescue Schedule Calculated!', 'auto_awesome');
+            }, 1000);
+        }
+
+        function deployAsset(id) {
+            const list = getSurvivors();
+            const s = list.find(x => x.id === id);
+            if (s) {
+                showToast(`Rescue unit dispatched to locate ${s.name}`, 'flight_takeoff');
+                s.status = 'safe';
+                s.needs = 'None (Rescue unit arrived)';
+                s.time = 'Just now';
+                s.score = 20;
+                saveSurvivors(list);
+                renderTableAndMap();
+                generateAIPlan(); // reload priorities list
+            }
+        }
+
+        // Broadcast messages length calculator
+        function updateCharCount() {
+            const textarea = document.getElementById('broadcast-textarea');
+            const counter = document.getElementById('char-counter');
+            const length = textarea.value.length;
+            counter.textContent = `${length} / 160`;
+            if (length > 160) {
+                counter.className = 'absolute bottom-2 right-2.5 text-[9px] font-mono text-red-500 font-bold';
+            } else {
+                counter.className = 'absolute bottom-2 right-2.5 text-[9px] font-mono text-strava-muted';
+            }
+        }
+
+        // Send broadcast announcement
+        function sendBroadcast() {
+            const textarea = document.getElementById('broadcast-textarea');
+            const msg = textarea.value.trim();
+            if (msg === '') return;
+
+            const list = getAnnouncements();
+            list.unshift({
+                id: 'ann-' + Date.now(),
+                message: msg,
+                time: 'Just now'
+            });
+            localStorage.setItem('resku_announcements', JSON.stringify(list));
+
+            showToast('Announcement broadcasted to BLE mesh network!', 'rss_feed');
+            textarea.value = '';
+            updateCharCount();
+        }
+
+        // Realtime clock header updater
+        function updateHeaderTime() {
+            const now = new Date();
+            const hrs = String(now.getHours()).padStart(2, '0');
+            const mins = String(now.getMinutes()).padStart(2, '0');
+            document.getElementById('header-time').textContent = `${hrs}:${mins}`;
+        }
+
+        // Initialization
+        window.onload = () => {
+            getSurvivors();
+            getAnnouncements();
+            renderTableAndMap();
+            updateHeaderTime();
+            setInterval(updateHeaderTime, 10000);
+        };
+
+        // Listen for Storage updates from Mobile simulator tab
+        window.addEventListener('storage', (e) => {
+            if (e.key === 'resku_survivors') {
+                renderTableAndMap();
+            }
+        });
+
+        // Polling fallback to ensure dynamic update without window focus delays
+        setInterval(renderTableAndMap, 1500);
+    </script>
+</body>
+</html>
