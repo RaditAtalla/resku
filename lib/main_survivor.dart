@@ -9,8 +9,8 @@ void main() async {
   // Initialize local offline database
   await LocalDB().init();
   
-  // Start BLE Ad-Hoc mesh loops
-  await BleMeshManager().startMeshCycle();
+  // Initialize BLE Ad-Hoc mesh manager data
+  await BleMeshManager().init();
   
   runApp(const SurvivorApp());
 }

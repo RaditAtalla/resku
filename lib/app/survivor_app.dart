@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../core/utils/design_system.dart';
 import '../features/survivor/forms/survivor_form_screen.dart';
 import '../features/survivor/guide/first_aid_guide_screen.dart';
+import '../features/survivor/nodes/mesh_nodes_screen.dart';
 
 // Survivor Mobile App shell layout and bottom navigation.
 class SurvivorApp extends StatefulWidget {
@@ -17,6 +18,7 @@ class _SurvivorAppState extends State<SurvivorApp> {
   final List<Widget> _screens = const [
     SurvivorFormScreen(),
     FirstAidGuideScreen(),
+    MeshNodesScreen(),
   ];
 
   @override
@@ -88,6 +90,11 @@ class _SurvivorAppState extends State<SurvivorApp> {
                 icon: Icon(Icons.medical_services_outlined),
                 activeIcon: Icon(Icons.medical_services),
                 label: 'First Aid',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.hub_outlined),
+                activeIcon: Icon(Icons.hub),
+                label: 'Mesh Nodes',
               ),
             ],
           ),

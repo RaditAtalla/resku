@@ -3,6 +3,7 @@ import '../../../core/database/local_db.dart';
 import '../../../core/models/survivor_record.dart';
 import '../../../core/models/rescuer_message.dart';
 import '../../../core/utils/design_system.dart';
+import '../../../core/network/ble/ble_mesh_manager.dart';
 import 'dart:async';
 
 class SurvivorFormScreen extends StatefulWidget {
@@ -21,8 +22,9 @@ class _SurvivorFormScreenState extends State<SurvivorFormScreen>
   final List<String> _needs = [];
 
   // Mesh state variables
-  String _connectionStatus = 'Disconnected';
-  bool _isBroadcasting = false;
+  int _otherDevicesCount = 0;
+  MeshState _meshState = MeshState.idle;
+  int _cooldownSeconds = 0;
 
   // Animation controller for pulsing central button
   late AnimationController _pulseController;
@@ -66,6 +68,16 @@ class _SurvivorFormScreenState extends State<SurvivorFormScreen>
     super.initState();
     _loadAnnouncements();
 
+    final mesh = BleMeshManager();
+    _otherDevicesCount = mesh.otherDevicesCountNotifier.value;
+    _meshState = mesh.state;
+    _cooldownSeconds = mesh.cooldownSecondsNotifier.value;
+
+    mesh.otherDevicesCountNotifier.addListener(_onCountChanged);
+    mesh.stateNotifier.addListener(_onStateChanged);
+    mesh.cooldownSecondsNotifier.addListener(_onCooldownChanged);
+    mesh.onDataSynced = _loadAnnouncements;
+
     // Set up pulsing animation
     _pulseController = AnimationController(
       vsync: this,
@@ -91,6 +103,14 @@ class _SurvivorFormScreenState extends State<SurvivorFormScreen>
 
   @override
   void dispose() {
+    final mesh = BleMeshManager();
+    mesh.otherDevicesCountNotifier.removeListener(_onCountChanged);
+    mesh.stateNotifier.removeListener(_onStateChanged);
+    mesh.cooldownSecondsNotifier.removeListener(_onCooldownChanged);
+    if (mesh.onDataSynced == _loadAnnouncements) {
+      mesh.onDataSynced = null;
+    }
+
     _pulseController.dispose();
     _nameController.dispose();
     _pageController.dispose();
@@ -98,8 +118,139 @@ class _SurvivorFormScreenState extends State<SurvivorFormScreen>
     super.dispose();
   }
 
+  void _onCountChanged() {
+    if (mounted) {
+      setState(() {
+        _otherDevicesCount = BleMeshManager().otherDevicesCountNotifier.value;
+      });
+    }
+  }
+
+  void _onStateChanged() {
+    if (mounted) {
+      final newState = BleMeshManager().stateNotifier.value;
+      
+      // Notify user when a sync completes successfully
+      if (newState == MeshState.success && _meshState != MeshState.success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            behavior: SnackBarBehavior.floating,
+            content: Center(
+              child: ReskuToast(
+                text: 'Sync complete! Stored: ${BleMeshManager().otherDevicesCountNotifier.value} other nodes.',
+                icon: Icons.done_all,
+              ),
+            ),
+          ),
+        );
+      }
+      
+      setState(() {
+        _meshState = newState;
+      });
+    }
+  }
+
+  void _onCooldownChanged() {
+    if (mounted) {
+      setState(() {
+        _cooldownSeconds = BleMeshManager().cooldownSecondsNotifier.value;
+      });
+    }
+  }
+
+  String _getConnectionStatusText() {
+    switch (_meshState) {
+      case MeshState.idle:
+        return 'Disconnected';
+      case MeshState.searching:
+        return 'Searching Mesh...';
+      case MeshState.broadcasting:
+        return 'Broadcasting...';
+      case MeshState.receiving:
+        return 'Receiving...';
+      case MeshState.connected:
+        return 'Mesh Connected';
+      case MeshState.success:
+        return 'Sync Success';
+      case MeshState.waiting:
+        return 'Waiting (${_cooldownSeconds}s)';
+    }
+  }
+
+  Color _getConnectionStatusColor() {
+    switch (_meshState) {
+      case MeshState.idle:
+        return AppColors.muted;
+      case MeshState.searching:
+        return AppColors.injured;
+      case MeshState.broadcasting:
+        return AppColors.orange;
+      case MeshState.receiving:
+        return Colors.blue;
+      case MeshState.connected:
+      case MeshState.success:
+        return AppColors.safe;
+      case MeshState.waiting:
+        return AppColors.muted;
+    }
+  }
+
+  Color _getConnectionStatusBgColor() {
+    switch (_meshState) {
+      case MeshState.idle:
+      case MeshState.waiting:
+        return AppColors.grayBg;
+      case MeshState.searching:
+        return AppColors.injuredBg;
+      case MeshState.broadcasting:
+        return AppColors.orange.withValues(alpha: 0.1);
+      case MeshState.receiving:
+        return Colors.blue.withValues(alpha: 0.1);
+      case MeshState.connected:
+      case MeshState.success:
+        return AppColors.safeBg;
+    }
+  }
+
+  Color _getConnectionStatusBorderColor() {
+    switch (_meshState) {
+      case MeshState.idle:
+      case MeshState.waiting:
+        return AppColors.border;
+      case MeshState.searching:
+        return AppColors.injuredBorder;
+      case MeshState.broadcasting:
+        return AppColors.orange.withValues(alpha: 0.3);
+      case MeshState.receiving:
+        return Colors.blue.withValues(alpha: 0.3);
+      case MeshState.connected:
+      case MeshState.success:
+        return AppColors.safeBorder;
+    }
+  }
+
   Future<void> _loadAnnouncements() async {
     final list = await LocalDB().getAllRescuerMessages();
+    final db = LocalDB();
+    final myId = await db.getOrCreateDeviceUUID();
+    final all = await db.getAllSurvivors();
+    final existing = all.where((s) => s.id == myId).toList();
+    
+    if (existing.isNotEmpty && mounted) {
+      final localRecord = existing.first;
+      setState(() {
+        _nameController.text = localRecord.name == 'Anonymous' ? '' : localRecord.name;
+        _status = localRecord.status;
+        _needs.clear();
+        if (localRecord.needs.isNotEmpty) {
+          _needs.addAll(localRecord.needs.split(', ').where((s) => s.isNotEmpty));
+        }
+      });
+    }
+
     setState(() {
       if (list.isEmpty) {
         _announcements = _mockAnnouncements;
@@ -153,74 +304,56 @@ class _SurvivorFormScreenState extends State<SurvivorFormScreen>
     }
   }
 
-  void _triggerBroadcast() {
-    setState(() {
-      _isBroadcasting = true;
-      _connectionStatus = 'Searching Mesh...';
-    });
+  void _triggerBroadcast() async {
+    final name = _nameController.text.trim();
+    final db = LocalDB();
+    final myId = await db.getOrCreateDeviceUUID();
 
-    // Simulate search and sync sequence
-    Timer(const Duration(seconds: 2), () async {
-      final name = _nameController.text.trim();
-      final record = SurvivorRecord(
-        id: 'survivor_${DateTime.now().millisecondsSinceEpoch}',
-        name: name.isEmpty ? 'Anonymous' : name,
-        latitude: -6.2000, // Simulated coordinates
-        longitude: 106.8166,
-        status: _status,
-        needs: _needs.join(', '),
-        timestamp: DateTime.now().millisecondsSinceEpoch,
-        sequenceNumber: 1,
-      );
+    final all = await db.getAllSurvivors();
+    int seqNum = 1;
+    final existing = all.where((s) => s.id == myId).toList();
+    if (existing.isNotEmpty) {
+      seqNum = existing.first.sequenceNumber + 1;
+    }
 
-      // Save to local database so background sync can pick it up
-      await LocalDB().saveSurvivorRecord(record);
+    final record = SurvivorRecord(
+      id: myId,
+      name: name.isEmpty ? 'Anonymous' : name,
+      latitude: -6.2000,
+      longitude: 106.8166,
+      status: _status,
+      needs: _needs.join(', '),
+      timestamp: DateTime.now().millisecondsSinceEpoch,
+      sequenceNumber: seqNum,
+    );
 
-      if (mounted) {
-        setState(() {
-          _isBroadcasting = false;
-          _connectionStatus = 'Mesh Connected';
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            backgroundColor: Colors.transparent,
-            elevation: 0,
-            behavior: SnackBarBehavior.floating,
-            content: Center(
-              child: ReskuToast(
-                text:
-                    'Status broadcasted successfully! (${_getStatusText(_status)})',
-                icon: Icons.check_circle_outline,
-              ),
-            ),
-          ),
-        );
-      }
-    });
+    // Save to local database
+    await db.saveSurvivorRecord(record);
+
+    // Start mesh cycle
+    await BleMeshManager().startMeshCycle();
   }
 
   @override
   Widget build(BuildContext context) {
+    final bool isMeshActive = _meshState != MeshState.idle;
+    final bool isConnectingOrSyncing = _meshState == MeshState.searching || 
+                                        _meshState == MeshState.broadcasting ||
+                                        _meshState == MeshState.receiving ||
+                                        _meshState == MeshState.connected;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('RESKU SURVIVOR'),
+        title: Text('Resku $_otherDevicesCount'),
         actions: [
           Container(
             margin: const EdgeInsets.only(right: 16),
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             decoration: BoxDecoration(
-              color: _connectionStatus == 'Mesh Connected'
-                  ? AppColors.safeBg
-                  : _connectionStatus == 'Searching Mesh...'
-                      ? AppColors.injuredBg
-                      : AppColors.grayBg,
+              color: _getConnectionStatusBgColor(),
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                color: _connectionStatus == 'Mesh Connected'
-                    ? AppColors.safeBorder
-                    : _connectionStatus == 'Searching Mesh...'
-                        ? AppColors.injuredBorder
-                        : AppColors.border,
+                color: _getConnectionStatusBorderColor(),
               ),
             ),
             child: Row(
@@ -230,26 +363,18 @@ class _SurvivorFormScreenState extends State<SurvivorFormScreen>
                   width: 8,
                   height: 8,
                   decoration: BoxDecoration(
-                    color: _connectionStatus == 'Mesh Connected'
-                        ? AppColors.safe
-                        : _connectionStatus == 'Searching Mesh...'
-                            ? AppColors.injured
-                            : AppColors.muted,
+                    color: _getConnectionStatusColor(),
                     shape: BoxShape.circle,
                   ),
                 ),
                 const SizedBox(width: 6),
                 Text(
-                  _connectionStatus.toUpperCase(),
+                  _getConnectionStatusText().toUpperCase(),
                   style: TextStyle(
                     fontFamily: 'monospace',
                     fontSize: 9,
                     fontWeight: FontWeight.bold,
-                    color: _connectionStatus == 'Mesh Connected'
-                        ? AppColors.safe
-                        : _connectionStatus == 'Searching Mesh...'
-                            ? AppColors.injured
-                            : AppColors.muted,
+                    color: _getConnectionStatusColor(),
                   ),
                 ),
               ],
@@ -356,25 +481,57 @@ class _SurvivorFormScreenState extends State<SurvivorFormScreen>
                   child: Column(
                     children: [
                       GestureDetector(
-                        onTap: _isBroadcasting ? null : _triggerBroadcast,
+                        onTap: isMeshActive ? null : _triggerBroadcast,
                         child: AnimatedBuilder(
                           animation: _pulseAnimation,
                           builder: (context, child) {
                             double scale = _pulseAnimation.value;
-                            if (!_isBroadcasting &&
-                                _connectionStatus != 'Mesh Connected') {
-                              scale =
-                                  1.0 + (scale - 1.0) * 0.4; // subtle breath
-                            } else if (_isBroadcasting) {
+                            if (!isMeshActive) {
+                              scale = 1.0 + (scale - 1.0) * 0.4; // subtle breath
+                            } else if (isConnectingOrSyncing) {
                               scale = _pulseAnimation.value; // intense pulse
                             } else {
-                              scale = 1.0; // stable connected
+                              scale = 1.0; // stable success
+                            }
+
+                            Color buttonColor = AppColors.orange;
+                            IconData buttonIcon = Icons.sensors;
+                            
+                            switch (_meshState) {
+                              case MeshState.idle:
+                                buttonColor = AppColors.orange;
+                                buttonIcon = Icons.sensors;
+                                break;
+                              case MeshState.searching:
+                                buttonColor = AppColors.injured;
+                                buttonIcon = Icons.sync;
+                                break;
+                              case MeshState.broadcasting:
+                                buttonColor = AppColors.orange;
+                                buttonIcon = Icons.wifi_tethering;
+                                break;
+                              case MeshState.receiving:
+                                buttonColor = Colors.blue;
+                                buttonIcon = Icons.wifi_tethering_off;
+                                break;
+                              case MeshState.connected:
+                                buttonColor = AppColors.safe;
+                                buttonIcon = Icons.check_circle_outline;
+                                break;
+                              case MeshState.success:
+                                buttonColor = AppColors.safe;
+                                buttonIcon = Icons.done_all;
+                                break;
+                              case MeshState.waiting:
+                                buttonColor = AppColors.muted;
+                                buttonIcon = Icons.hourglass_empty;
+                                break;
                             }
 
                             return Container(
                               width: 160,
                               height: 160,
-                              decoration: BoxDecoration(
+                              decoration: const BoxDecoration(
                                 shape: BoxShape.circle,
                               ),
                               child: Stack(
@@ -387,15 +544,7 @@ class _SurvivorFormScreenState extends State<SurvivorFormScreen>
                                     decoration: BoxDecoration(
                                       shape: BoxShape.circle,
                                       border: Border.all(
-                                        color: _isBroadcasting
-                                            ? AppColors.injured
-                                                .withValues(alpha: 0.3)
-                                            : _connectionStatus ==
-                                                    'Mesh Connected'
-                                                ? AppColors.safe
-                                                    .withValues(alpha: 0.3)
-                                                : AppColors.orange
-                                                    .withValues(alpha: 0.15),
+                                        color: buttonColor.withValues(alpha: 0.2),
                                         width: 2.0,
                                       ),
                                     ),
@@ -406,15 +555,7 @@ class _SurvivorFormScreenState extends State<SurvivorFormScreen>
                                     decoration: BoxDecoration(
                                       shape: BoxShape.circle,
                                       border: Border.all(
-                                        color: _isBroadcasting
-                                            ? AppColors.injured
-                                                .withValues(alpha: 0.5)
-                                            : _connectionStatus ==
-                                                    'Mesh Connected'
-                                                ? AppColors.safe
-                                                    .withValues(alpha: 0.5)
-                                                : AppColors.orange
-                                                    .withValues(alpha: 0.3),
+                                        color: buttonColor.withValues(alpha: 0.4),
                                         width: 1.5,
                                       ),
                                     ),
@@ -425,43 +566,29 @@ class _SurvivorFormScreenState extends State<SurvivorFormScreen>
                                     height: 110,
                                     decoration: BoxDecoration(
                                       shape: BoxShape.circle,
-                                      color: _isBroadcasting
-                                          ? AppColors.injured
-                                          : _connectionStatus ==
-                                                  'Mesh Connected'
-                                              ? AppColors.safe
-                                              : AppColors.orange,
+                                      color: buttonColor,
                                     ),
-                                    child: child,
+                                    child: Icon(
+                                      buttonIcon,
+                                      size: 44,
+                                      color: Colors.white,
+                                    ),
                                   ),
                                 ],
                               ),
                             );
                           },
-                          child: Icon(
-                            _connectionStatus == 'Mesh Connected'
-                                ? Icons.wifi_tethering
-                                : _isBroadcasting
-                                    ? Icons.sync
-                                    : Icons.sensors,
-                            size: 44,
-                            color: Colors.white,
-                          ),
                         ),
                       ),
                       const SizedBox(height: 12),
                       Text(
-                        _isBroadcasting
-                            ? 'BROADCASTING DATA...'
-                            : _connectionStatus == 'Mesh Connected'
-                                ? 'BROADCAST ACTIVE'
-                                : 'TAP TO BROADCAST STATUS',
+                        _meshState == MeshState.idle
+                            ? 'TAP TO BROADCAST STATUS'
+                            : _meshState == MeshState.waiting
+                                ? 'WAITING FOR NEXT CYCLE (${_cooldownSeconds}s)'
+                                : _getConnectionStatusText().toUpperCase(),
                         style: TextStyle(
-                          color: _isBroadcasting
-                              ? AppColors.injured
-                              : _connectionStatus == 'Mesh Connected'
-                                  ? AppColors.safe
-                                  : AppColors.muted,
+                          color: _getConnectionStatusColor(),
                           fontSize: 10,
                           fontWeight: FontWeight.bold,
                           fontFamily: 'monospace',

@@ -16,6 +16,7 @@ class ReskuLauncherApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       title: 'Resku Hub',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
@@ -49,7 +50,8 @@ class LaunchSelectionScreen extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const Icon(Icons.sensors, size: 72, color: Colors.purpleAccent),
+                  const Icon(Icons.sensors,
+                      size: 72, color: Colors.purpleAccent),
                   const SizedBox(height: 16),
                   const Text(
                     'RESKU MESH',
@@ -68,23 +70,25 @@ class LaunchSelectionScreen extends StatelessWidget {
                     style: TextStyle(color: Colors.white70, fontSize: 14),
                   ),
                   const SizedBox(height: 48),
-                  
+
                   // Survivor Mode Button
                   ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 20),
                       backgroundColor: Colors.redAccent.shade400,
                       foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
                       elevation: 8,
                     ),
                     onPressed: () async {
-                      // Boot BLE Mesh for survivor
-                      await BleMeshManager().startMeshCycle();
+                      // Initialize BLE Mesh for survivor without starting cycle
+                      await BleMeshManager().init();
                       if (context.mounted) {
                         Navigator.pushReplacement(
                           context,
-                          MaterialPageRoute(builder: (_) => const SurvivorApp()),
+                          MaterialPageRoute(
+                              builder: (_) => const SurvivorApp()),
                         );
                       }
                     },
@@ -95,20 +99,22 @@ class LaunchSelectionScreen extends StatelessWidget {
                         SizedBox(width: 12),
                         Text(
                           'ENTER SURVIVOR APP',
-                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                          style: TextStyle(
+                              fontWeight: FontWeight.bold, fontSize: 16),
                         ),
                       ],
                     ),
                   ),
                   const SizedBox(height: 20),
-                  
+
                   // Rescuer Mode Button
                   ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 20),
                       backgroundColor: Colors.indigoAccent.shade400,
                       foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
                       elevation: 8,
                     ),
                     onPressed: () {
@@ -124,17 +130,21 @@ class LaunchSelectionScreen extends StatelessWidget {
                         SizedBox(width: 12),
                         Text(
                           'ENTER RESCUER DASHBOARD',
-                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                          style: TextStyle(
+                              fontWeight: FontWeight.bold, fontSize: 16),
                         ),
                       ],
                     ),
                   ),
-                  
+
                   const SizedBox(height: 48),
                   const Text(
                     'Competition Build - Live Demo Mode\nLaunch either role dynamically for testing.',
                     textAlign: TextAlign.center,
-                    style: TextStyle(color: Colors.white30, fontSize: 11, fontStyle: FontStyle.italic),
+                    style: TextStyle(
+                        color: Colors.white30,
+                        fontSize: 11,
+                        fontStyle: FontStyle.italic),
                   ),
                 ],
               ),
