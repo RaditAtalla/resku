@@ -182,39 +182,162 @@
                     </div>
                 </div>
 
-                <!-- SLIDE 2: Market Fit -->
-                <div id="slide-1" class="slide w-full flex-col justify-center gap-6">
-                    <div class="border-b border-zinc-800 pb-4">
-                        <h2 id="edit-slide1-header" contenteditable="true" class="font-title font-bold text-3xl text-amber-500">1. Product-Market Fit (Masalah & Peluang)</h2>
-                        <p id="edit-slide1-subheader" contenteditable="true" class="text-sm text-zinc-400 mt-1">Mengapa pasar membutuhkan solusi komunikasi darurat berbasis mesh network?</p>
-                    </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-2">
-                        <!-- Problem Card -->
-                        <div class="p-6 bg-zinc-900/40 border border-zinc-800 rounded-2xl flex flex-col justify-between">
-                            <div>
-                                <span class="material-symbols-outlined text-rose-500 text-3xl mb-3">grid_off</span>
-                                <h3 id="edit-slide1-prob-title" contenteditable="true" class="text-lg font-bold text-zinc-100 mb-2">Masalah di Pasar (Pain)</h3>
-                                <ul id="edit-slide1-prob-list" contenteditable="true" class="text-sm text-zinc-400 space-y-3">
-                                    <li>• Infrastruktur seluler (BTS) hancur atau kehilangan daya saat bencana, menciptakan area mati sinyal total.</li>
-                                    <li>• Pusat komando penyelamat terisolasi dari data lapangan selama "Golden 72 Hours" pasca-bencana.</li>
-                                    <li>• Korban kritis tidak terdata secara prioritas, memperlambat proses triase medis.</li>
-                                </ul>
+                
+                <!-- SLIDE 2: Problem Statement (ISSUE TREE) -->
+                <div id="slide-1" class="slide w-full flex-col justify-center gap-4">
+                    <!-- Slide Header Badge & Logos -->
+                    <div class="flex items-center justify-between border-b border-zinc-800 pb-3 mb-2">
+                        <div class="flex items-center gap-3">
+                            <span id="edit-slide1-badge-title" contenteditable="true" class="px-4 py-1.5 bg-[#FC5200] text-white text-xs font-bold rounded-full uppercase tracking-wider">
+                                Problem Statement (ISSUE TREE)
+                            </span>
+                        </div>
+                        <div class="flex items-center gap-6">
+                            <div class="flex items-center gap-1">
+                                <span class="material-symbols-outlined text-rose-500 text-base">warning</span>
+                                <span class="text-zinc-500 font-mono text-[9px] uppercase tracking-wider">Root Cause Analysis</span>
                             </div>
-                            <div id="edit-slide1-prob-footer" contenteditable="true" class="mt-6 text-xs font-mono text-rose-400 uppercase tracking-wider">Komunikasi Terputus = Nyawa Hilang</div>
+                            <div class="flex items-center gap-2">
+                                <span class="material-symbols-outlined text-amber-500 text-xl">sensors</span>
+                                <span class="font-title font-bold text-sm text-zinc-100">RESKU</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Main Grid Layout -->
+                    <div class="grid grid-cols-12 gap-4 items-stretch text-[10px] leading-relaxed">
+                        
+                        <!-- COLUMN 1: Sub Problems (Col Span 3) -->
+                        <div class="col-span-3 flex flex-col justify-around py-4 space-y-4">
+                            <!-- Box A -->
+                            <div class="relative p-3 bg-white border-2 border-[#FC5200] rounded-xl flex flex-col justify-center min-h-[140px] shadow-lg">
+                                <div class="absolute -top-3 left-4 px-2 py-0.5 bg-amber-500 text-zinc-950 font-bold rounded text-[8px] font-mono">
+                                    Sub Problems
+                                </div>
+                                <h3 id="edit-slide1-boxA-text" contenteditable="true" class="font-bold text-base text-zinc-900 leading-tight">
+                                    A. Beban Kognitif Berlebih
+                                </h3>
+                            </div>
+
+                            <!-- Box B -->
+                            <div class="relative p-3 bg-white border-2 border-[#FC5200] rounded-xl flex flex-col justify-center min-h-[140px] shadow-lg">
+                                <div class="absolute -top-3 left-4 px-2 py-0.5 bg-amber-500 text-zinc-950 font-bold rounded text-[8px] font-mono">
+                                    Sub Problems
+                                </div>
+                                <h3 id="edit-slide1-boxB-text" contenteditable="true" class="font-bold text-sm text-zinc-900 leading-tight">
+                                    B. Ketiadaan Ekosistem Pemantauan & Intervensi Adaptif
+                                </h3>
+                            </div>
                         </div>
 
-                        <!-- Solution Card -->
-                        <div class="p-6 bg-zinc-900/40 border border-zinc-800 rounded-2xl flex flex-col justify-between">
-                            <div>
-                                <span class="material-symbols-outlined text-amber-500 text-3xl mb-3">fit_screen</span>
-                                <h3 id="edit-slide1-sol-title" contenteditable="true" class="text-lg font-bold text-zinc-100 mb-2">Kesesuaian Solusi (Market Fit)</h3>
-                                <ul id="edit-slide1-sol-list" contenteditable="true" class="text-sm text-zinc-400 space-y-3">
-                                    <li>• <strong>Zero-Infrastructure Mesh</strong>: Smartphone korban langsung membentuk jaringan BLE tanpa perlu sinyal GSM/Internet.</li>
-                                    <li>• <strong>Data Muling dengan Drone</strong>: Relawan dan drone mengumpulkan data dari mesh secara pasif untuk dikirim ke pusat komando.</li>
-                                    <li>• <strong>Kecocokan B2G/B2NGO</strong>: Membantu pemerintah (SAR) dan NGO mempercepat koordinasi bantuan di lapangan bencana.</li>
-                                </ul>
+                        <!-- Connector Lines column (SVG) -->
+                        <div class="col-span-1 flex flex-col justify-between py-8 pointer-events-none">
+                            <svg class="h-full w-full text-[#FC5200] opacity-80" viewBox="0 0 100 300" preserveAspectRatio="none">
+                                <!-- Top Connector Lines (Box A -> 1A, 2A, 3A) -->
+                                <path d="M 0 75 L 50 75 L 50 30 L 100 30 M 50 75 L 100 75 M 50 75 L 50 120 L 100 120" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="3 3" />
+                                <!-- Bottom Connector Lines (Box B -> 1B, 2B, 3B) -->
+                                <path d="M 0 225 L 50 225 L 50 180 L 100 180 M 50 225 L 100 225 M 50 225 L 50 270 L 100 270" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="3 3" />
+                            </svg>
+                        </div>
+
+                        <!-- COLUMN 2: Root Causes (Col Span 4) -->
+                        <div class="col-span-4 flex flex-col justify-between py-2 space-y-2">
+                            <!-- Group A Root Causes -->
+                            <div class="space-y-1.5">
+                                <div class="absolute -mt-3.5 ml-2 px-1.5 py-0.5 bg-[#FC5200] text-white text-[7px] font-bold rounded font-mono">
+                                    Root Causes A
+                                </div>
+                                <div class="p-2 bg-white border border-[#FC5200]/70 rounded-lg text-zinc-800 shadow-sm">
+                                    <p id="edit-slide1-rc1a" contenteditable="true">
+                                        <strong>1A.</strong> Penurunan tajam dalam perhatian dan fokus setelah 15–20 menit pertama proses pembelajaran.
+                                    </p>
+                                </div>
+                                <div class="p-2 bg-white border border-[#FC5200]/70 rounded-lg text-zinc-800 shadow-sm">
+                                    <p id="edit-slide1-rc2a" contenteditable="true">
+                                        <strong>2A.</strong> Kurikulum konvensional menerapkan durasi belajar yang panjang tanpa mempertimbangkan ambang batas neurofisiologis siswa (kondisi *flow*).
+                                    </p>
+                                </div>
+                                <div class="p-2 bg-white border border-[#FC5200]/70 rounded-lg text-zinc-800 shadow-sm">
+                                    <p id="edit-slide1-rc3a" contenteditable="true">
+                                        <strong>3A.</strong> Stres akademik tak kasatmata yang melumpuhkan kemampuan penalaran logis (tercermin pada stagnansi nilai rata-rata dan skor PISA).
+                                    </p>
+                                </div>
                             </div>
-                            <div id="edit-slide1-sol-footer" contenteditable="true" class="mt-6 text-xs font-mono text-amber-400 uppercase tracking-wider">Aktivasi Sinyal Evakuasi Instan</div>
+
+                            <!-- Group B Root Causes -->
+                            <div class="space-y-1.5">
+                                <div class="absolute -mt-3.5 ml-2 px-1.5 py-0.5 bg-[#FC5200] text-white text-[7px] font-bold rounded font-mono">
+                                    Root Causes B
+                                </div>
+                                <div class="p-2 bg-white border border-[#FC5200]/70 rounded-lg text-zinc-800 shadow-sm">
+                                    <p id="edit-slide1-rc1b" contenteditable="true">
+                                        <strong>1B.</strong> Tidak adanya intervensi nyata bagi guru untuk mendeteksi secara akurat kelelahan belajar atau kebingungan kognitif siswa.
+                                    </p>
+                                </div>
+                                <div class="p-2 bg-white border border-[#FC5200]/70 rounded-lg text-zinc-800 shadow-sm">
+                                    <p id="edit-slide1-rc2b" contenteditable="true">
+                                        <strong>2B.</strong> Platform EdTech saat ini sepenuhnya bersifat pasif (hanya berfokus konten satu arah) tanpa adanya umpan balik.
+                                    </p>
+                                </div>
+                                <div class="p-2 bg-white border border-[#FC5200]/70 rounded-lg text-zinc-800 shadow-sm">
+                                    <p id="edit-slide1-rc3b" contenteditable="true">
+                                        <strong>3B.</strong> Kurangnya integrasi antara kondisi mental siswa dan penyesuaian lingkungan fisik kelas (misalnya, pencahayaan otomatis).
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- COLUMN 3: Gap Areas & Brand Funnel (Col Span 4) -->
+                        <div class="col-span-4 flex items-center justify-between pl-2 relative">
+                            <!-- Gap boxes -->
+                            <div class="flex flex-col justify-center space-y-6 w-[150px] z-10">
+                                <div class="absolute -mt-24 ml-2 px-2 py-0.5 bg-amber-500 text-zinc-950 font-bold rounded text-[8px] font-mono">
+                                    Gap Areas
+                                </div>
+                                <!-- Gap 1 -->
+                                <div class="p-4 bg-white border-2 border-[#FC5200] rounded-xl flex items-center justify-center text-center shadow-md min-h-[70px]">
+                                    <h4 id="edit-slide1-gap1-text" contenteditable="true" class="font-bold text-xs text-[#FC5200] uppercase tracking-wider">
+                                        BIOCOGNITIVE GAP
+                                    </h4>
+                                </div>
+                                <!-- Gap 2 -->
+                                <div class="p-4 bg-white border-2 border-[#FC5200] rounded-xl flex items-center justify-center text-center shadow-md min-h-[70px]">
+                                    <h4 id="edit-slide1-gap2-text" contenteditable="true" class="font-bold text-xs text-[#FC5200] uppercase tracking-wider">
+                                        Technological Enabler Gap
+                                    </h4>
+                                </div>
+                            </div>
+
+                            <!-- Funnel Arrow (SVG) -->
+                            <div class="flex-1 h-36 flex items-center justify-center pointer-events-none mx-1">
+                                <svg class="h-full w-full text-[#FC5200] fill-current" viewBox="0 0 100 200" preserveAspectRatio="none">
+                                    <path d="M 0 10 L 100 45 L 100 155 L 0 190 Z" />
+                                </svg>
+                            </div>
+
+                            <!-- RESKU Banner -->
+                            <div class="w-16 bg-[#FC5200] border-2 border-white rounded-2xl flex items-center justify-center py-8 shadow-xl min-h-[220px] z-10">
+                                <h1 id="edit-slide1-brand-vertical" contenteditable="true" class="font-title font-black text-2xl text-white tracking-widest uppercase [writing-mode:vertical-lr] text-center rotate-180">
+                                    RESKU
+                                </h1>
+                            </div>
+
+                            <!-- Mascot Molee wearing yellow hardhat (Bottom Right) -->
+                            <div class="absolute right-[-24px] bottom-[-24px] w-28 h-28 z-20 pointer-events-none select-none">
+                                <img src="../svg/svg/molee.svg" class="w-full h-full object-contain" alt="Mascot Molee" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- BOTTOM ROW: Wide Problem Statement Banner -->
+                    <div class="mt-2 p-3 bg-white border-2 border-[#FC5200] rounded-2xl flex items-center gap-4 shadow-lg min-h-[50px]">
+                        <span id="edit-slide1-bottom-badge" contenteditable="true" class="px-3 py-1.5 bg-[#FC5200] text-white text-[9px] font-bold rounded-lg uppercase tracking-wider font-mono">
+                            Problem Statement
+                        </span>
+                        <div class="flex-1">
+                            <p id="edit-slide1-bottom-desc" contenteditable="true" class="text-zinc-800 text-xs font-bold leading-snug">
+                                Bagaimana manajemen sekolah dapat secara proaktif mengatasi hilangnya capaian pembelajaran (learning loss) dan memulihkan kemampuan penalaran logis siswa yang menurun akibat kelelahan mental?
+                            </p>
                         </div>
                     </div>
                 </div>
@@ -1117,7 +1240,7 @@
     <script>
         const slideTopics = [
             "Cover",
-            "Market Fit",
+            "Problem Statement",
             "User Experience",
             "Empty Map View",
             "Tech & Novelty",
