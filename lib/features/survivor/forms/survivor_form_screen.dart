@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../core/database/local_db.dart';
 import '../../../core/models/survivor_record.dart';
 import '../../../core/models/rescuer_message.dart';
+import '../../../core/utils/design_system.dart';
 import 'dart:async';
 
 class SurvivorFormScreen extends StatefulWidget {
@@ -11,21 +12,22 @@ class SurvivorFormScreen extends StatefulWidget {
   State<SurvivorFormScreen> createState() => _SurvivorFormScreenState();
 }
 
-class _SurvivorFormScreenState extends State<SurvivorFormScreen> with SingleTickerProviderStateMixin {
+class _SurvivorFormScreenState extends State<SurvivorFormScreen>
+    with SingleTickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _nameController = TextEditingController();
-  
+
   SurvivorStatus _status = SurvivorStatus.safe;
   final List<String> _needs = [];
-  
+
   // Mesh state variables
   String _connectionStatus = 'Disconnected';
   bool _isBroadcasting = false;
-  
+
   // Animation controller for pulsing central button
   late AnimationController _pulseController;
   late Animation<double> _pulseAnimation;
-  
+
   List<RescuerMessage> _announcements = [];
   final PageController _pageController = PageController();
   int _currentPageIndex = 0;
@@ -35,18 +37,27 @@ class _SurvivorFormScreenState extends State<SurvivorFormScreen> with SingleTick
   final List<RescuerMessage> _mockAnnouncements = [
     RescuerMessage(
       id: 'mock_1',
-      message: 'ALL SURVIVORS: Evacuation Camp active at North Sports Field. Helicopter water drop at 18:00.',
-      timestamp: DateTime.now().subtract(const Duration(minutes: 10)).millisecondsSinceEpoch,
+      message:
+          'ALL SURVIVORS: Evacuation Camp active at North Sports Field. Helicopter water drop at 18:00.',
+      timestamp: DateTime.now()
+          .subtract(const Duration(minutes: 10))
+          .millisecondsSinceEpoch,
     ),
     RescuerMessage(
       id: 'mock_2',
-      message: 'MEDICAL NOTICE: First aid tent established at Sector 2 grid. Bring ID if possible.',
-      timestamp: DateTime.now().subtract(const Duration(minutes: 25)).millisecondsSinceEpoch,
+      message:
+          'MEDICAL NOTICE: First aid tent established at Sector 2 grid. Bring ID if possible.',
+      timestamp: DateTime.now()
+          .subtract(const Duration(minutes: 25))
+          .millisecondsSinceEpoch,
     ),
     RescuerMessage(
       id: 'mock_3',
-      message: 'COMMUNICATION ADVISORY: Keep your BLE active. Mesh sync is running via passing rescuers.',
-      timestamp: DateTime.now().subtract(const Duration(hours: 1)).millisecondsSinceEpoch,
+      message:
+          'COMMUNICATION ADVISORY: Keep your BLE active. Mesh sync is running via passing rescuers.',
+      timestamp: DateTime.now()
+          .subtract(const Duration(hours: 1))
+          .millisecondsSinceEpoch,
     ),
   ];
 
@@ -54,17 +65,17 @@ class _SurvivorFormScreenState extends State<SurvivorFormScreen> with SingleTick
   void initState() {
     super.initState();
     _loadAnnouncements();
-    
+
     // Set up pulsing animation
     _pulseController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 2),
     )..repeat(reverse: true);
-    
+
     _pulseAnimation = Tween<double>(begin: 1.0, end: 1.25).animate(
       CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
     );
-    
+
     // Auto-swipe announcements
     _pageTimer = Timer.periodic(const Duration(seconds: 6), (timer) {
       if (_announcements.isNotEmpty && _pageController.hasClients) {
@@ -101,11 +112,33 @@ class _SurvivorFormScreenState extends State<SurvivorFormScreen> with SingleTick
   Color _getStatusColor(SurvivorStatus status) {
     switch (status) {
       case SurvivorStatus.safe:
-        return const Color(0xFF10B981); // Emerald Green
+        return AppColors.safe;
       case SurvivorStatus.injured:
-        return const Color(0xFFF59E0B); // Amber Orange
+        return AppColors.injured;
       case SurvivorStatus.critical:
-        return const Color(0xFFEF4444); // Rose Red
+        return AppColors.critical;
+    }
+  }
+
+  Color _getStatusBgColor(SurvivorStatus status) {
+    switch (status) {
+      case SurvivorStatus.safe:
+        return AppColors.safeBg;
+      case SurvivorStatus.injured:
+        return AppColors.injuredBg;
+      case SurvivorStatus.critical:
+        return AppColors.criticalBg;
+    }
+  }
+
+  Color _getStatusBorderColor(SurvivorStatus status) {
+    switch (status) {
+      case SurvivorStatus.safe:
+        return AppColors.safeBorder;
+      case SurvivorStatus.injured:
+        return AppColors.injuredBorder;
+      case SurvivorStatus.critical:
+        return AppColors.criticalBorder;
     }
   }
 
@@ -150,13 +183,15 @@ class _SurvivorFormScreenState extends State<SurvivorFormScreen> with SingleTick
         });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            backgroundColor: _getStatusColor(_status),
-            content: Row(
-              children: [
-                const Icon(Icons.check_circle_outline, color: Colors.white),
-                const SizedBox(width: 10),
-                Text('Status broadcasted successfully! (${_getStatusText(_status)})'),
-              ],
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            behavior: SnackBarBehavior.floating,
+            content: Center(
+              child: ReskuToast(
+                text:
+                    'Status broadcasted successfully! (${_getStatusText(_status)})',
+                icon: Icons.check_circle_outline,
+              ),
             ),
           ),
         );
@@ -166,8 +201,6 @@ class _SurvivorFormScreenState extends State<SurvivorFormScreen> with SingleTick
 
   @override
   Widget build(BuildContext context) {
-    final statusColor = _getStatusColor(_status);
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('RESKU SURVIVOR'),
@@ -177,17 +210,17 @@ class _SurvivorFormScreenState extends State<SurvivorFormScreen> with SingleTick
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             decoration: BoxDecoration(
               color: _connectionStatus == 'Mesh Connected'
-                  ? Colors.green.withOpacity(0.2)
+                  ? AppColors.safeBg
                   : _connectionStatus == 'Searching Mesh...'
-                      ? Colors.amber.withOpacity(0.2)
-                      : Colors.white.withOpacity(0.1),
+                      ? AppColors.injuredBg
+                      : AppColors.grayBg,
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
                 color: _connectionStatus == 'Mesh Connected'
-                    ? Colors.green
+                    ? AppColors.safeBorder
                     : _connectionStatus == 'Searching Mesh...'
-                        ? Colors.amber
-                        : Colors.white30,
+                        ? AppColors.injuredBorder
+                        : AppColors.border,
               ),
             ),
             child: Row(
@@ -198,10 +231,10 @@ class _SurvivorFormScreenState extends State<SurvivorFormScreen> with SingleTick
                   height: 8,
                   decoration: BoxDecoration(
                     color: _connectionStatus == 'Mesh Connected'
-                        ? Colors.green
+                        ? AppColors.safe
                         : _connectionStatus == 'Searching Mesh...'
-                            ? Colors.amber
-                            : Colors.grey,
+                            ? AppColors.injured
+                            : AppColors.muted,
                     shape: BoxShape.circle,
                   ),
                 ),
@@ -209,13 +242,14 @@ class _SurvivorFormScreenState extends State<SurvivorFormScreen> with SingleTick
                 Text(
                   _connectionStatus.toUpperCase(),
                   style: TextStyle(
-                    fontSize: 10,
+                    fontFamily: 'monospace',
+                    fontSize: 9,
                     fontWeight: FontWeight.bold,
                     color: _connectionStatus == 'Mesh Connected'
-                        ? Colors.green.shade200
+                        ? AppColors.safe
                         : _connectionStatus == 'Searching Mesh...'
-                            ? Colors.amber.shade200
-                            : Colors.grey.shade400,
+                            ? AppColors.injured
+                            : AppColors.muted,
                   ),
                 ),
               ],
@@ -231,21 +265,20 @@ class _SurvivorFormScreenState extends State<SurvivorFormScreen> with SingleTick
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // 1. Rescuer Announcement Message Box
+                // 1. Rescuer Announcement Message Box using ReskuCard
                 if (_announcements.isNotEmpty) ...[
-                  const Padding(
-                    padding: EdgeInsets.only(left: 4.0, bottom: 8.0),
+                  Padding(
+                    padding: const EdgeInsets.only(left: 4.0, bottom: 8.0),
                     child: Row(
                       children: [
-                        Icon(Icons.campaign, color: Colors.redAccent, size: 20),
-                        SizedBox(width: 6),
+                        const Icon(Icons.campaign,
+                            color: AppColors.orange, size: 20),
+                        const SizedBox(width: 6),
                         Text(
                           'RESCUER BROADCASTS',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: 1.1,
-                            color: Colors.redAccent,
+                          style: AppTextStyles.cardTitle.copyWith(
+                            color: AppColors.orange,
+                            fontSize: 11,
                           ),
                         ),
                       ],
@@ -265,59 +298,49 @@ class _SurvivorFormScreenState extends State<SurvivorFormScreen> with SingleTick
                           },
                           itemBuilder: (context, index) {
                             final msg = _announcements[index];
-                            final timeString = DateTime.fromMillisecondsSinceEpoch(msg.timestamp)
-                                .toLocal()
-                                .toString()
-                                .substring(11, 16);
-                            return Card(
-                              elevation: 4,
-                              color: const Color(0xFF1E1E2C),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
-                                side: const BorderSide(color: Colors.redAccent, width: 0.8),
-                              ),
-                              child: Padding(
-                                padding: const EdgeInsets.all(14.0),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Expanded(
-                                      child: Text(
-                                        msg.message,
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 13,
-                                          height: 1.4,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                        maxLines: 3,
-                                        overflow: TextOverflow.ellipsis,
+                            final timeString =
+                                DateTime.fromMillisecondsSinceEpoch(
+                                        msg.timestamp)
+                                    .toLocal()
+                                    .toString()
+                                    .substring(11, 16);
+                            return ReskuCard(
+                              accentColor: AppColors.orange,
+                              padding: const EdgeInsets.all(14.0),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      msg.message,
+                                      style: AppTextStyles.bodyBold.copyWith(
+                                        fontWeight: FontWeight.w500,
+                                        fontSize: 12,
                                       ),
+                                      maxLines: 3,
+                                      overflow: TextOverflow.ellipsis,
                                     ),
-                                    const SizedBox(height: 6),
-                                    Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Text(
-                                          'Received via Mesh • $timeString',
-                                          style: TextStyle(
-                                            color: Colors.grey.shade400,
-                                            fontSize: 10,
-                                            fontWeight: FontWeight.w600,
-                                          ),
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        'Received via Mesh • $timeString',
+                                        style: AppTextStyles.monospaceLabel,
+                                      ),
+                                      Text(
+                                        '${index + 1}/${_announcements.length}',
+                                        style: const TextStyle(
+                                          color: AppColors.orange,
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.bold,
                                         ),
-                                        Text(
-                                          '${index + 1}/${_announcements.length}',
-                                          style: const TextStyle(
-                                            color: Colors.redAccent,
-                                            fontSize: 10,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
                               ),
                             );
                           },
@@ -338,8 +361,10 @@ class _SurvivorFormScreenState extends State<SurvivorFormScreen> with SingleTick
                           animation: _pulseAnimation,
                           builder: (context, child) {
                             double scale = _pulseAnimation.value;
-                            if (!_isBroadcasting && _connectionStatus != 'Mesh Connected') {
-                              scale = 1.0 + (scale - 1.0) * 0.4; // subtle breath
+                            if (!_isBroadcasting &&
+                                _connectionStatus != 'Mesh Connected') {
+                              scale =
+                                  1.0 + (scale - 1.0) * 0.4; // subtle breath
                             } else if (_isBroadcasting) {
                               scale = _pulseAnimation.value; // intense pulse
                             } else {
@@ -351,17 +376,6 @@ class _SurvivorFormScreenState extends State<SurvivorFormScreen> with SingleTick
                               height: 160,
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: _isBroadcasting
-                                        ? Colors.amber.withOpacity(0.4)
-                                        : _connectionStatus == 'Mesh Connected'
-                                            ? Colors.green.withOpacity(0.4)
-                                            : Colors.redAccent.withOpacity(0.2),
-                                    blurRadius: 20 * scale,
-                                    spreadRadius: 4 * scale,
-                                  )
-                                ],
                               ),
                               child: Stack(
                                 alignment: Alignment.center,
@@ -374,10 +388,14 @@ class _SurvivorFormScreenState extends State<SurvivorFormScreen> with SingleTick
                                       shape: BoxShape.circle,
                                       border: Border.all(
                                         color: _isBroadcasting
-                                            ? Colors.amber.withOpacity(0.3)
-                                            : _connectionStatus == 'Mesh Connected'
-                                                ? Colors.green.withOpacity(0.3)
-                                                : Colors.redAccent.withOpacity(0.15),
+                                            ? AppColors.injured
+                                                .withValues(alpha: 0.3)
+                                            : _connectionStatus ==
+                                                    'Mesh Connected'
+                                                ? AppColors.safe
+                                                    .withValues(alpha: 0.3)
+                                                : AppColors.orange
+                                                    .withValues(alpha: 0.15),
                                         width: 2.0,
                                       ),
                                     ),
@@ -389,10 +407,14 @@ class _SurvivorFormScreenState extends State<SurvivorFormScreen> with SingleTick
                                       shape: BoxShape.circle,
                                       border: Border.all(
                                         color: _isBroadcasting
-                                            ? Colors.amber.withOpacity(0.5)
-                                            : _connectionStatus == 'Mesh Connected'
-                                                ? Colors.green.withOpacity(0.5)
-                                                : Colors.redAccent.withOpacity(0.3),
+                                            ? AppColors.injured
+                                                .withValues(alpha: 0.5)
+                                            : _connectionStatus ==
+                                                    'Mesh Connected'
+                                                ? AppColors.safe
+                                                    .withValues(alpha: 0.5)
+                                                : AppColors.orange
+                                                    .withValues(alpha: 0.3),
                                         width: 1.5,
                                       ),
                                     ),
@@ -403,21 +425,12 @@ class _SurvivorFormScreenState extends State<SurvivorFormScreen> with SingleTick
                                     height: 110,
                                     decoration: BoxDecoration(
                                       shape: BoxShape.circle,
-                                      gradient: RadialGradient(
-                                        colors: _isBroadcasting
-                                            ? [Colors.amber.shade400, Colors.amber.shade700]
-                                            : _connectionStatus == 'Mesh Connected'
-                                                ? [Colors.green.shade400, Colors.green.shade700]
-                                                : [Colors.redAccent.shade400, Colors.redAccent.shade700],
-                                        center: const Alignment(-0.2, -0.2),
-                                      ),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Colors.black.withOpacity(0.3),
-                                          blurRadius: 8,
-                                          offset: const Offset(2, 4),
-                                        )
-                                      ],
+                                      color: _isBroadcasting
+                                          ? AppColors.injured
+                                          : _connectionStatus ==
+                                                  'Mesh Connected'
+                                              ? AppColors.safe
+                                              : AppColors.orange,
                                     ),
                                     child: child,
                                   ),
@@ -445,12 +458,13 @@ class _SurvivorFormScreenState extends State<SurvivorFormScreen> with SingleTick
                                 : 'TAP TO BROADCAST STATUS',
                         style: TextStyle(
                           color: _isBroadcasting
-                              ? Colors.amber
+                              ? AppColors.injured
                               : _connectionStatus == 'Mesh Connected'
-                                  ? Colors.green.shade300
-                                  : Colors.white70,
-                          fontSize: 12,
+                                  ? AppColors.safe
+                                  : AppColors.muted,
+                          fontSize: 10,
                           fontWeight: FontWeight.bold,
+                          fontFamily: 'monospace',
                           letterSpacing: 1.5,
                         ),
                       ),
@@ -460,151 +474,125 @@ class _SurvivorFormScreenState extends State<SurvivorFormScreen> with SingleTick
                 const SizedBox(height: 32),
 
                 // 3. Survivor Form Card containing Inputs
-                Card(
-                  color: const Color(0xFF1E1E2C),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
-                    side: BorderSide(color: Colors.white.withOpacity(0.08)),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(20.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        const Text(
-                          'SURVIVOR DETAILS',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: 1.2,
-                            color: Colors.white70,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
+                ReskuCard(
+                  padding: const EdgeInsets.all(20.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      const Text(
+                        'SURVIVOR DETAILS',
+                        style: AppTextStyles.cardTitle,
+                      ),
+                      const SizedBox(height: 16),
 
-                        // Nama Survivor (Optional input)
-                        TextFormField(
+                      // Nama Survivor (Optional input) using ReskuTextField
+                      SizedBox(
+                        height: 58,
+                        child: ReskuTextField(
                           controller: _nameController,
-                          decoration: InputDecoration(
-                            labelText: 'Name / Anonymous ID (Optional)',
-                            labelStyle: TextStyle(color: Colors.grey.shade400),
-                            prefixIcon: const Icon(Icons.person_outline, color: Colors.redAccent),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: const BorderSide(color: Colors.redAccent, width: 2),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(color: Colors.white.withOpacity(0.15)),
-                            ),
-                            filled: true,
-                            fillColor: const Color(0xFF13131D),
-                          ),
-                          style: const TextStyle(color: Colors.white),
+                          hintText: 'Name / Anonymous ID (Optional)',
+                          maxCount: 50,
+                          prefixIcon: Icons.person_outline,
                         ),
-                        const SizedBox(height: 20),
+                      ),
+                      const SizedBox(height: 20),
 
-                        // Triage Status Dropdown in Color
-                        const Text(
-                          'Triage Status Severity',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white54,
+                      // Triage Status Dropdown in Color
+                      Text(
+                        'Triage Status Severity',
+                        style: AppTextStyles.bodyBold
+                            .copyWith(color: AppColors.muted),
+                      ),
+                      const SizedBox(height: 8),
+                      AnimatedContainer(
+                        duration: const Duration(milliseconds: 300),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: _getStatusBgColor(_status),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                              color: _getStatusBorderColor(_status),
+                              width: 1.5),
+                        ),
+                        child: DropdownButtonHideUnderline(
+                          child: DropdownButton<SurvivorStatus>(
+                            value: _status,
+                            dropdownColor: Colors.white,
+                            icon: Icon(Icons.arrow_drop_down,
+                                color: _getStatusColor(_status)),
+                            items: SurvivorStatus.values.map((status) {
+                              final color = _getStatusColor(status);
+                              return DropdownMenuItem<SurvivorStatus>(
+                                value: status,
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      width: 12,
+                                      height: 12,
+                                      decoration: BoxDecoration(
+                                        color: color,
+                                        shape: BoxShape.circle,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Text(
+                                      _getStatusText(status),
+                                      style: TextStyle(
+                                        color: color,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 12,
+                                        fontFamily: 'Inter',
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            }).toList(),
+                            onChanged: (val) {
+                              if (val != null) {
+                                setState(() {
+                                  _status = val;
+                                });
+                              }
+                            },
                           ),
                         ),
-                        const SizedBox(height: 8),
-                        AnimatedContainer(
-                          duration: const Duration(milliseconds: 300),
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: statusColor.withOpacity(0.15),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: statusColor, width: 1.5),
-                          ),
-                          child: DropdownButtonHideUnderline(
-                            child: DropdownButton<SurvivorStatus>(
-                              value: _status,
-                              dropdownColor: const Color(0xFF1E1E2C),
-                              icon: Icon(Icons.arrow_drop_down, color: statusColor),
-                              items: SurvivorStatus.values.map((status) {
-                                final color = _getStatusColor(status);
-                                return DropdownMenuItem<SurvivorStatus>(
-                                  value: status,
-                                  child: Row(
-                                    children: [
-                                      Container(
-                                        width: 12,
-                                        height: 12,
-                                        decoration: BoxDecoration(
-                                          color: color,
-                                          shape: BoxShape.circle,
-                                        ),
-                                      ),
-                                      const SizedBox(width: 12),
-                                      Text(
-                                        _getStatusText(status),
-                                        style: TextStyle(
-                                          color: color,
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 14,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                );
-                              }).toList(),
-                              onChanged: (val) {
-                                if (val != null) {
-                                  setState(() {
-                                    _status = val;
-                                  });
-                                }
-                              },
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 24),
+                      ),
+                      const SizedBox(height: 24),
 
-                        // Needed Resource with Checkbox
-                        const Text(
-                          'Needed Resources',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white54,
+                      // Needed Resource with Checkbox
+                      Text(
+                        'Needed Resources',
+                        style: AppTextStyles.bodyBold
+                            .copyWith(color: AppColors.muted),
+                      ),
+                      const SizedBox(height: 8),
+                      Column(
+                        children: [
+                          _buildResourceTile(
+                            title: 'Food & Water',
+                            icon: Icons.local_drink,
+                            value: 'Food & Water',
                           ),
-                        ),
-                        const SizedBox(height: 8),
-                        Column(
-                          children: [
-                            _buildResourceTile(
-                              title: 'Food & Water',
-                              icon: Icons.local_drink,
-                              value: 'Food & Water',
-                            ),
-                            _buildResourceTile(
-                              title: 'First Aid / Medical',
-                              icon: Icons.healing,
-                              value: 'First Aid / Medical',
-                            ),
-                            _buildResourceTile(
-                              title: 'Shelter & Blanket',
-                              icon: Icons.home,
-                              value: 'Shelter',
-                            ),
-                            _buildResourceTile(
-                              title: 'Tools & Warmth',
-                              icon: Icons.build,
-                              value: 'Tools / Warmth',
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
+                          _buildResourceTile(
+                            title: 'First Aid / Medical',
+                            icon: Icons.healing,
+                            value: 'First Aid / Medical',
+                          ),
+                          _buildResourceTile(
+                            title: 'Shelter & Blanket',
+                            icon: Icons.home,
+                            value: 'Shelter',
+                          ),
+                          _buildResourceTile(
+                            title: 'Tools & Warmth',
+                            icon: Icons.build,
+                            value: 'Tools / Warmth',
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
               ],
@@ -641,21 +629,26 @@ class _SurvivorFormScreenState extends State<SurvivorFormScreen> with SingleTick
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
               color: isSelected
-                  ? Colors.redAccent.withOpacity(0.08)
-                  : const Color(0xFF13131D),
+                  ? AppColors.orange.withValues(alpha: 0.08)
+                  : Colors.white,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: isSelected
-                    ? Colors.redAccent.withOpacity(0.6)
-                    : Colors.white.withOpacity(0.05),
-                width: 1.5,
+                color: isSelected ? AppColors.orange : AppColors.border,
+                width: 1,
               ),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x05000000),
+                  blurRadius: 3,
+                  offset: Offset(0, 1),
+                )
+              ],
             ),
             child: Row(
               children: [
                 Icon(
                   icon,
-                  color: isSelected ? Colors.redAccent : Colors.grey.shade400,
+                  color: isSelected ? AppColors.orange : AppColors.muted,
                   size: 20,
                 ),
                 const SizedBox(width: 14),
@@ -663,9 +656,11 @@ class _SurvivorFormScreenState extends State<SurvivorFormScreen> with SingleTick
                   child: Text(
                     title,
                     style: TextStyle(
-                      color: isSelected ? Colors.white : Colors.grey.shade300,
-                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                      fontSize: 14,
+                      color: isSelected ? AppColors.black : AppColors.muted,
+                      fontWeight:
+                          isSelected ? FontWeight.bold : FontWeight.normal,
+                      fontSize: 12,
+                      fontFamily: 'Inter',
                     ),
                   ),
                 ),
@@ -673,10 +668,10 @@ class _SurvivorFormScreenState extends State<SurvivorFormScreen> with SingleTick
                   width: 20,
                   height: 20,
                   decoration: BoxDecoration(
-                    color: isSelected ? Colors.redAccent : Colors.transparent,
+                    color: isSelected ? AppColors.orange : Colors.transparent,
                     borderRadius: BorderRadius.circular(6),
                     border: Border.all(
-                      color: isSelected ? Colors.redAccent : Colors.grey.shade600,
+                      color: isSelected ? AppColors.orange : AppColors.border,
                       width: 1.5,
                     ),
                   ),

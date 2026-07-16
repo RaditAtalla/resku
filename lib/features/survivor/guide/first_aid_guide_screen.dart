@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/utils/design_system.dart';
 
 class FirstAidGuideScreen extends StatelessWidget {
   const FirstAidGuideScreen({super.key});
@@ -13,22 +14,20 @@ class FirstAidGuideScreen extends StatelessWidget {
         child: ListView(
           padding: const EdgeInsets.all(16.0),
           children: [
-            const Padding(
-              padding: EdgeInsets.only(left: 4.0, bottom: 12.0),
+            Padding(
+              padding: const EdgeInsets.only(left: 4.0, bottom: 12.0),
               child: Text(
                 'OFFLINE EMERGENCY PROTOCOLS',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w900,
+                style: AppTextStyles.monospaceLabel.copyWith(
+                  fontWeight: FontWeight.bold,
                   letterSpacing: 1.1,
-                  color: Colors.grey,
                 ),
               ),
             ),
             _buildFirstAidAccordion(
               title: '1. CPR (Cardiopulmonary Resuscitation)',
               subtitle: 'For unresponsive victims with abnormal breathing',
-              urgencyColor: const Color(0xFFEF4444), // Critical (Red)
+              urgencyColor: AppColors.critical,
               icon: Icons.heart_broken,
               steps: [
                 'Ensure the scene is safe for you and the victim.',
@@ -42,7 +41,7 @@ class FirstAidGuideScreen extends StatelessWidget {
             _buildFirstAidAccordion(
               title: '2. Severe Bleeding Management',
               subtitle: 'Control major blood loss using pressure and elevation',
-              urgencyColor: const Color(0xFFEF4444), // Critical (Red)
+              urgencyColor: AppColors.critical,
               icon: Icons.bloodtype,
               steps: [
                 'Protect yourself by wearing gloves if available.',
@@ -56,7 +55,7 @@ class FirstAidGuideScreen extends StatelessWidget {
             _buildFirstAidAccordion(
               title: '3. Fractures and Splinting',
               subtitle: 'Stabilize broken bones and joint dislocations',
-              urgencyColor: const Color(0xFFF59E0B), // Moderate (Amber)
+              urgencyColor: AppColors.injured,
               icon: Icons.personal_injury,
               steps: [
                 'Control any external bleeding first with direct pressure around the injury site.',
@@ -70,7 +69,7 @@ class FirstAidGuideScreen extends StatelessWidget {
             _buildFirstAidAccordion(
               title: '4. Severe Burns Treatment',
               subtitle: 'Treat heat, chemical, or electrical burns',
-              urgencyColor: const Color(0xFFF59E0B), // Moderate (Amber)
+              urgencyColor: AppColors.injured,
               icon: Icons.local_fire_department,
               steps: [
                 'Remove the heat source: Ensure the hazard is cleared.',
@@ -84,7 +83,7 @@ class FirstAidGuideScreen extends StatelessWidget {
             _buildFirstAidAccordion(
               title: '5. Heatstroke & Dehydration',
               subtitle: 'Cooling down someone suffering from extreme heat',
-              urgencyColor: const Color(0xFF10B981), // Mild (Green)
+              urgencyColor: AppColors.safe,
               icon: Icons.thermostat,
               steps: [
                 'Move to shade: Relocate the person to a cool, air-conditioned, or shaded place immediately.',
@@ -108,124 +107,109 @@ class FirstAidGuideScreen extends StatelessWidget {
     required List<String> steps,
     required String warningText,
   }) {
-    return Card(
-      color: const Color(0xFF1E1E2C),
-      margin: const EdgeInsets.only(bottom: 14.0),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: Colors.white.withOpacity(0.05)),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Theme(
-        data: ThemeData(
-          dividerColor: Colors.transparent,
-          brightness: Brightness.dark,
-        ),
-        child: ExpansionTile(
-          leading: Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: urgencyColor.withOpacity(0.12),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(icon, color: urgencyColor, size: 24),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14.0),
+      child: ReskuCard(
+        accentColor: urgencyColor,
+        padding: EdgeInsets.zero,
+        child: Theme(
+          data: ThemeData(
+            dividerColor: Colors.transparent,
           ),
-          title: Text(
-            title,
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 15,
-              color: Colors.white,
+          child: ExpansionTile(
+            leading: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: urgencyColor.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(icon, color: urgencyColor, size: 24),
             ),
-          ),
-          subtitle: Text(
-            subtitle,
-            style: TextStyle(
-              fontSize: 11,
-              color: Colors.grey.shade400,
+            title: Text(
+              title,
+              style: AppTextStyles.cardTitle,
             ),
-          ),
-          childrenPadding: const EdgeInsets.all(16.0),
-          expandedAlignment: Alignment.topLeft,
-          children: [
-            const Divider(color: Colors.white10, height: 1),
-            const SizedBox(height: 12),
-            // Step by step list
-            ...List.generate(steps.length, (index) {
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 12.0),
+            subtitle: Text(
+              subtitle,
+              style: AppTextStyles.bodyMuted,
+            ),
+            childrenPadding: const EdgeInsets.all(16.0),
+            expandedAlignment: Alignment.topLeft,
+            children: [
+              const Divider(color: AppColors.border, height: 1),
+              const SizedBox(height: 12),
+              // Step by step list
+              ...List.generate(steps.length, (index) {
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 12.0),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        width: 22,
+                        height: 22,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: urgencyColor.withValues(alpha: 0.2),
+                          shape: BoxShape.circle,
+                          border: Border.all(color: urgencyColor, width: 1.5),
+                        ),
+                        child: Text(
+                          '${index + 1}',
+                          style: TextStyle(
+                            color: urgencyColor,
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            fontFamily: 'Inter',
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          steps[index],
+                          style: AppTextStyles.bodyRegular,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }),
+              const SizedBox(height: 8),
+              // Warning Box
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.criticalBg,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: AppColors.criticalBorder,
+                    width: 1,
+                  ),
+                ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Container(
-                      width: 22,
-                      height: 22,
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        color: urgencyColor.withOpacity(0.2),
-                        shape: BoxShape.circle,
-                        border: Border.all(color: urgencyColor, width: 1.5),
-                      ),
-                      child: Text(
-                        '${index + 1}',
-                        style: TextStyle(
-                          color: urgencyColor,
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
+                    const Icon(
+                      Icons.warning_amber_rounded,
+                      color: AppColors.critical,
+                      size: 20,
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 10),
                     Expanded(
                       child: Text(
-                        steps[index],
-                        style: const TextStyle(
-                          fontSize: 13,
-                          height: 1.45,
-                          color: Colors.white70,
+                        warningText,
+                        style: AppTextStyles.bodyBold.copyWith(
+                          color: AppColors.critical,
+                          height: 1.4,
                         ),
                       ),
                     ),
                   ],
                 ),
-              );
-            }),
-            const SizedBox(height: 8),
-            // Warning Box
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.redAccent.withOpacity(0.08),
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(
-                  color: Colors.redAccent.withOpacity(0.4),
-                  width: 1,
-                ),
               ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Icon(
-                    Icons.warning_amber_rounded,
-                    color: Colors.redAccent,
-                    size: 20,
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      warningText,
-                      style: const TextStyle(
-                        color: Colors.redAccent,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        height: 1.4,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
