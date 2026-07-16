@@ -14,7 +14,6 @@ class LocalDB {
   late Box _messagesBox;
   bool _initialized = false;
 
-  // Initialize storage adapters and open boxes
   Future<void> init() async {
     if (_initialized) return;
     debugPrint('Initializing local offline database (Hive)...');
@@ -22,6 +21,9 @@ class LocalDB {
     _survivorsBox = await Hive.openBox('survivor_records_box');
     _messagesBox = await Hive.openBox('rescuer_messages_box');
     _initialized = true;
+
+    // Auto-prune stale logs on database load
+    await pruneStaleData();
   }
 
   // Generate or retrieve a persistent stable unique identifier for this device
@@ -117,6 +119,13 @@ class LocalDB {
     debugPrint('Saving rescuer broadcast message to DB: ${message.id}');
   }
 
+  // Save or update a rescuer message synchronously
+  void saveRescuerMessageSync(RescuerMessage message) {
+    if (!_initialized) return;
+    _messagesBox.put(message.id, message.toMap());
+    debugPrint('Saving rescuer broadcast message to DB synchronously: ${message.id}');
+  }
+
   // Fetch all received rescuer broadcast announcements
   Future<List<RescuerMessage>> getAllRescuerMessages() async {
     await init();
@@ -132,6 +141,70 @@ class LocalDB {
       }
     }
     return list;
+  }
+
+  // Fetch all received rescuer broadcast announcements synchronously
+  List<RescuerMessage> getAllRescuerMessagesSync() {
+    if (!_initialized) return [];
+    final List<RescuerMessage> list = [];
+    for (var key in _messagesBox.keys) {
+      final val = _messagesBox.get(key);
+      if (val != null) {
+        try {
+          list.add(RescuerMessage.fromMap(Map<String, dynamic>.from(val)));
+        } catch (e) {
+          debugPrint('Error parsing rescuer message synchronously for key $key: $e');
+        }
+      }
+    }
+    return list;
+  }
+
+  // Prunes survivor records and rescuer messages older than 72 hours (3 days)
+  Future<void> pruneStaleData() async {
+    debugPrint('LocalDB Pruner: Starting database stale log cleanup check...');
+    final cutoff = DateTime.now().subtract(const Duration(hours: 72)).millisecondsSinceEpoch;
+
+    // 1. Prune stale survivor records
+    final survivorKeys = _survivorsBox.keys.toList();
+    int prunedSurvivors = 0;
+    for (var key in survivorKeys) {
+      if (key == 'device_uuid' || key == 'device_uuid_survivor' || key == 'device_uuid_rescuer') continue;
+      final val = _survivorsBox.get(key);
+      if (val != null) {
+        try {
+          final record = SurvivorRecord.fromMap(Map<String, dynamic>.from(val));
+          if (record.timestamp < cutoff) {
+            await _survivorsBox.delete(key);
+            prunedSurvivors++;
+            debugPrint('LocalDB Pruner: Deleted stale survivor: ${record.name} (${record.id})');
+          }
+        } catch (e) {
+          debugPrint('LocalDB Pruner: Error parsing record during prune for key $key: $e');
+        }
+      }
+    }
+
+    // 2. Prune stale rescuer messages
+    final messageKeys = _messagesBox.keys.toList();
+    int prunedMessages = 0;
+    for (var key in messageKeys) {
+      final val = _messagesBox.get(key);
+      if (val != null) {
+        try {
+          final msg = RescuerMessage.fromMap(Map<String, dynamic>.from(val));
+          if (msg.timestamp < cutoff) {
+            await _messagesBox.delete(key);
+            prunedMessages++;
+            debugPrint('LocalDB Pruner: Deleted stale announcement message: ${msg.id}');
+          }
+        } catch (e) {
+          debugPrint('LocalDB Pruner: Error parsing message during prune for key $key: $e');
+        }
+      }
+    }
+
+    debugPrint('LocalDB Pruner: Cleanup complete. Pruned: $prunedSurvivors survivor logs, $prunedMessages announcements.');
   }
 }
 

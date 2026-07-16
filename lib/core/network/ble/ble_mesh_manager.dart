@@ -5,8 +5,10 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart' as fbp;
 import 'package:ble_peripheral/ble_peripheral.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:battery_plus/battery_plus.dart';
 import '../../database/local_db.dart';
 import '../../models/survivor_record.dart';
+import '../../models/rescuer_message.dart';
 
 enum MeshState {
   idle,
@@ -35,6 +37,7 @@ class BleMeshManager {
   int _waitingCountdown = 30;
 
   VoidCallback? onDataSynced;
+  final Battery _battery = Battery();
 
   MeshState get state => stateNotifier.value;
 
@@ -42,8 +45,7 @@ class BleMeshManager {
   static const String serviceUuid = '8f7b3e0c-d3a9-4672-9b2f-7a4c6a8b79d2';
   static const String charUuid = 'a3f5b2c9-e7d1-42a8-9b8f-3c6d4e5f0a1b';
 
-  bool get isSimulated => kIsWeb || 
-      (defaultTargetPlatform != TargetPlatform.android && defaultTargetPlatform != TargetPlatform.iOS);
+
 
   // Request Bluetooth and Location permissions at runtime
   Future<bool> requestBlePermissions() async {
@@ -105,9 +107,7 @@ class BleMeshManager {
     stateNotifier.value = MeshState.idle;
     cooldownSecondsNotifier.value = 0;
 
-    if (!isSimulated) {
-      await _stopRealBle();
-    }
+    await _stopRealBle();
     debugPrint('Mesh: Resku BLE Mesh stopped.');
   }
 
@@ -119,109 +119,74 @@ class BleMeshManager {
     _toggleRole(isBroadcasting: true);
   }
 
+  Future<Map<String, int>> _getIntervalSettings() async {
+    try {
+      final level = await _battery.batteryLevel;
+      if (level < 20) {
+        debugPrint('Mesh Battery Saver active (Battery: $level%). Adjusting timing intervals.');
+        return {
+          'advertiseMs': 4000,
+          'scanMs': 2000,
+          'cooldownS': 90,
+        };
+      }
+    } catch (e) {
+      debugPrint('Battery Saver: Battery check unavailable on this platform ($e). Using default intervals.');
+    }
+    return {
+      'advertiseMs': 8000,
+      'scanMs': 4000,
+      'cooldownS': 30,
+    };
+  }
+
   void _toggleRole({required bool isBroadcasting}) async {
     if (!_isMeshRunning) return;
 
     final rnd = math.Random();
+    final intervals = await _getIntervalSettings();
+
     if (isBroadcasting) {
       stateNotifier.value = MeshState.broadcasting;
       debugPrint('Mesh State: Broadcasting (Advertising).');
 
-      bool advertiseSuccess = false;
-      if (!isSimulated) {
-        advertiseSuccess = await _startRealAdvertising();
+      final bool advertiseSuccess = await _startRealAdvertising();
+      if (!advertiseSuccess) {
+        debugPrint('Mesh Warning: Real Advertising failed to start.');
       }
 
-      // Asymmetric timing: 8 seconds base + [0 to 2] seconds random jitter
-      final durationMs = 8000 + rnd.nextInt(2000);
+      final baseMs = intervals['advertiseMs']!;
+      final durationMs = baseMs + rnd.nextInt((baseMs * 0.25).toInt().clamp(1, 2000));
 
-      if (isSimulated || !advertiseSuccess) {
-        if (!advertiseSuccess && !isSimulated) {
-          debugPrint('Mesh Warning: Real Advertising failed, falling back to simulated mode for this cycle.');
-        }
-
-        // Simulator peer-finding probability (25% chance during this window)
-        if (rnd.nextDouble() < 0.25) {
-          _cycleTimer = Timer(Duration(milliseconds: rnd.nextInt(3000)), () {
-            _connectAndSyncSimulated();
-          });
-        } else {
-          _cycleTimer = Timer(Duration(milliseconds: durationMs), () {
-            _toggleRole(isBroadcasting: false); // switch to scanning
-          });
-        }
-      } else {
-        // Wait for advertising period to end, then switch role
-        _cycleTimer = Timer(Duration(milliseconds: durationMs), () async {
-          await _stopRealAdvertising();
-          _toggleRole(isBroadcasting: false);
-        });
-      }
+      // Wait for advertising period to end, then switch role
+      _cycleTimer = Timer(Duration(milliseconds: durationMs), () async {
+        await _stopRealAdvertising();
+        _toggleRole(isBroadcasting: false);
+      });
     } else {
       stateNotifier.value = MeshState.receiving;
       debugPrint('Mesh State: Receiving (Scanning).');
 
-      bool scanSuccess = false;
-      if (!isSimulated) {
-        scanSuccess = await _startRealScanning();
+      final bool scanSuccess = await _startRealScanning();
+      if (!scanSuccess) {
+        debugPrint('Mesh Warning: Real Scanning failed to start.');
       }
 
-      // Asymmetric timing: 4 seconds base + [0 to 1] second random jitter
-      final durationMs = 4000 + rnd.nextInt(1000);
+      final baseMs = intervals['scanMs']!;
+      final durationMs = baseMs + rnd.nextInt((baseMs * 0.25).toInt().clamp(1, 1000));
 
-      if (isSimulated || !scanSuccess) {
-        if (!scanSuccess && !isSimulated) {
-          debugPrint('Mesh Warning: Real Scanning failed, falling back to simulated mode for this cycle.');
-        }
-
-        // Simulator peer-finding probability (40% chance during this window)
-        if (rnd.nextDouble() < 0.40) {
-          _cycleTimer = Timer(Duration(milliseconds: rnd.nextInt(2000)), () {
-            _connectAndSyncSimulated();
-          });
-        } else {
-          _cycleTimer = Timer(Duration(milliseconds: durationMs), () {
-            _toggleRole(isBroadcasting: true); // switch to advertising
-          });
-        }
-      } else {
-        // Wait for scanning period to end, then switch role
-        _cycleTimer = Timer(Duration(milliseconds: durationMs), () async {
-          await _stopRealScanning();
-          _toggleRole(isBroadcasting: true);
-        });
-      }
+      // Wait for scanning period to end, then switch role
+      _cycleTimer = Timer(Duration(milliseconds: durationMs), () async {
+        await _stopRealScanning();
+        _toggleRole(isBroadcasting: true);
+      });
     }
   }
 
-  void _connectAndSyncSimulated() async {
-    _cycleTimer?.cancel();
-    stateNotifier.value = MeshState.connected;
-    debugPrint('Mesh Simulator: Connected to nearby peer!');
-
-    // 1. Send local survivor record and coordinates
-    await Future.delayed(const Duration(seconds: 1));
-    debugPrint('Mesh Simulator: Sent local coordinate and details to peer.');
-
-    // 2. Switch to receiving mode to receive peer's data
-    stateNotifier.value = MeshState.receiving;
-    await Future.delayed(const Duration(seconds: 2));
-
-    await _updateOtherDevicesCount();
-
-    stateNotifier.value = MeshState.success;
-    if (onDataSynced != null) {
-      onDataSynced!();
-    }
-    debugPrint('Mesh Simulator: 1 simulated sync cycle completed.');
-
-    await Future.delayed(const Duration(seconds: 2));
-    _startCooldown();
-  }
-
-  void _startCooldown() {
+  void _startCooldown() async {
     stateNotifier.value = MeshState.waiting;
-    _waitingCountdown = 30;
+    final intervals = await _getIntervalSettings();
+    _waitingCountdown = intervals['cooldownS']!;
     cooldownSecondsNotifier.value = _waitingCountdown;
 
     _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
@@ -279,7 +244,7 @@ class BleMeshManager {
 
       await BlePeripheral.addService(service);
 
-      List<Map<String, dynamic>>? pendingDeltaToSend;
+      Map<String, dynamic>? pendingDeltaToSend;
 
       // Set write callback so that when the scanning device writes to our characteristic, we receive their records and LUV.
       BlePeripheral.setWriteRequestCallback((deviceId, characteristicId, offset, value) {
@@ -290,27 +255,48 @@ class BleMeshManager {
             final payload = jsonDecode(jsonString) as Map<String, dynamic>;
 
             // 1. Process client's delta records
-            final clientDeltaList = payload['delta'] as List<dynamic>? ?? [];
-            for (var item in clientDeltaList) {
+            final clientDelta = payload['delta'] as Map<String, dynamic>? ?? {};
+            final clientDeltaSurvivors = clientDelta['survivors'] as List<dynamic>? ?? [];
+            for (var item in clientDeltaSurvivors) {
               final record = SurvivorRecord.fromMap(Map<String, dynamic>.from(item));
               LocalDB().saveSurvivorRecordSync(record);
             }
-            debugPrint('Mesh Real BLE GATT: Saved ${clientDeltaList.length} records written by client.');
+
+            final clientDeltaMessages = clientDelta['messages'] as List<dynamic>? ?? [];
+            for (var item in clientDeltaMessages) {
+              final msg = RescuerMessage.fromMap(Map<String, dynamic>.from(item));
+              LocalDB().saveRescuerMessageSync(msg);
+            }
+            debugPrint('Mesh Real BLE GATT: Saved ${clientDeltaSurvivors.length} survivors and ${clientDeltaMessages.length} messages written by client.');
 
             // 2. Process client's LUV to compile delta to send back
-            final clientLuv = Map<String, dynamic>.from(payload['luv'] ?? {});
+            final clientLuv = payload['luv'] as Map<String, dynamic>? ?? {};
+            final clientLuvSurvivors = Map<String, dynamic>.from(clientLuv['survivors'] ?? {});
+            final clientLuvMessages = Map<String, dynamic>.from(clientLuv['messages'] ?? {});
+
             final freshLocalSurvivors = LocalDB().getAllSurvivorsSync();
+            final freshLocalMessages = LocalDB().getAllRescuerMessagesSync();
             
-            final List<Map<String, dynamic>> deltaToClient = [];
+            final List<Map<String, dynamic>> deltaSurvivors = [];
             for (var local in freshLocalSurvivors) {
-              final clientSeq = clientLuv[local.id] as int? ?? -1;
+              final clientSeq = clientLuvSurvivors[local.id] as int? ?? -1;
               if (local.sequenceNumber > clientSeq) {
-                deltaToClient.add(local.toMap());
+                deltaSurvivors.add(local.toMap());
               }
             }
 
-            pendingDeltaToSend = deltaToClient;
-            debugPrint('Mesh Real BLE GATT: Compiled ${deltaToClient.length} delta records to send to client.');
+            final List<Map<String, dynamic>> deltaMessages = [];
+            for (var local in freshLocalMessages) {
+              if (!clientLuvMessages.containsKey(local.id)) {
+                deltaMessages.add(local.toMap());
+              }
+            }
+
+            pendingDeltaToSend = {
+              'survivors': deltaSurvivors,
+              'messages': deltaMessages,
+            };
+            debugPrint('Mesh Real BLE GATT: Compiled delta to send: ${deltaSurvivors.length} survivors, ${deltaMessages.length} messages.');
             
             _updateOtherDevicesCount();
             if (onDataSynced != null) {
@@ -331,13 +317,18 @@ class BleMeshManager {
           if (pendingDeltaToSend == null) {
             // Step 1: Return our local LUV catalog
             final freshLocalSurvivors = LocalDB().getAllSurvivorsSync();
-            final localLuv = {for (var s in freshLocalSurvivors) s.id: s.sequenceNumber};
-            payloadString = jsonEncode(localLuv);
+            final freshLocalMessages = LocalDB().getAllRescuerMessagesSync();
+
+            final catalog = {
+              'survivors': {for (var s in freshLocalSurvivors) s.id: s.sequenceNumber},
+              'messages': {for (var m in freshLocalMessages) m.id: m.timestamp}
+            };
+            payloadString = jsonEncode(catalog);
             debugPrint('Mesh Real BLE GATT: Sending LUV catalog to client: $payloadString');
           } else {
             // Step 3: Return delta records compiled during Step 2
             payloadString = jsonEncode(pendingDeltaToSend);
-            debugPrint('Mesh Real BLE GATT: Sending ${pendingDeltaToSend!.length} delta records to client.');
+            debugPrint('Mesh Real BLE GATT: Sending delta records to client.');
             pendingDeltaToSend = null; // Clear for next connections
           }
 
@@ -481,34 +472,53 @@ class BleMeshManager {
         final peerLuvString = utf8.decode(rawLuv);
         debugPrint('Mesh Real BLE DTN: Read Peer LUV: $peerLuvString');
 
-        Map<String, int> peerLuv = {};
+        Map<String, dynamic> peerCatalog = {};
         if (peerLuvString.isNotEmpty) {
           try {
-            peerLuv = Map<String, int>.from(jsonDecode(peerLuvString));
+            peerCatalog = Map<String, dynamic>.from(jsonDecode(peerLuvString));
           } catch (e) {
-            debugPrint('Mesh Real BLE DTN: Failed to decode Peer LUV: $e');
+            debugPrint('Mesh Real BLE DTN: Failed to decode Peer catalog: $e');
           }
         }
 
+        final peerLuvSurvivors = Map<String, dynamic>.from(peerCatalog['survivors'] ?? {});
+        final peerLuvMessages = Map<String, dynamic>.from(peerCatalog['messages'] ?? {});
+
         // 2. Compare LUV and compile our local LUV and delta outbox (Step 2)
         final localSurvivors = await localDb.getAllSurvivors();
-        final localLuv = {for (var s in localSurvivors) s.id: s.sequenceNumber};
+        final localMessages = await localDb.getAllRescuerMessages();
+
+        final localLuvSurvivors = {for (var s in localSurvivors) s.id: s.sequenceNumber};
+        final localLuvMessages = {for (var m in localMessages) m.id: m.timestamp};
         
-        final List<Map<String, dynamic>> deltaToPeer = [];
+        final List<Map<String, dynamic>> deltaSurvivors = [];
         for (var local in localSurvivors) {
-          final peerSeq = peerLuv[local.id] ?? -1;
+          final peerSeq = peerLuvSurvivors[local.id] as int? ?? -1;
           if (local.sequenceNumber > peerSeq) {
-            deltaToPeer.add(local.toMap());
+            deltaSurvivors.add(local.toMap());
+          }
+        }
+
+        final List<Map<String, dynamic>> deltaMessages = [];
+        for (var local in localMessages) {
+          if (!peerLuvMessages.containsKey(local.id)) {
+            deltaMessages.add(local.toMap());
           }
         }
 
         final writePayload = jsonEncode({
-          'luv': localLuv,
-          'delta': deltaToPeer,
+          'luv': {
+            'survivors': localLuvSurvivors,
+            'messages': localLuvMessages,
+          },
+          'delta': {
+            'survivors': deltaSurvivors,
+            'messages': deltaMessages,
+          },
         });
 
         // Write our LUV + Delta records to the peer
-        debugPrint('Mesh Real BLE DTN: Writing local LUV and ${deltaToPeer.length} delta records to peer...');
+        debugPrint('Mesh Real BLE DTN: Writing local LUV and delta records (${deltaSurvivors.length} survivors, ${deltaMessages.length} messages) to peer...');
         await syncChar.write(Uint8List.fromList(utf8.encode(writePayload)));
 
         // 3. Read Peer's delta records back (Step 3)
@@ -519,14 +529,25 @@ class BleMeshManager {
 
         if (peerDeltaString.isNotEmpty) {
           try {
-            final List<dynamic> jsonList = jsonDecode(peerDeltaString);
-            int savedCount = 0;
-            for (var item in jsonList) {
+            final responseDelta = jsonDecode(peerDeltaString) as Map<String, dynamic>;
+            
+            final peerDeltaSurvivors = responseDelta['survivors'] as List<dynamic>? ?? [];
+            int savedSurvivors = 0;
+            for (var item in peerDeltaSurvivors) {
               final record = SurvivorRecord.fromMap(Map<String, dynamic>.from(item));
               await localDb.saveSurvivorRecord(record);
-              savedCount++;
+              savedSurvivors++;
             }
-            debugPrint('Mesh Real BLE DTN: Saved $savedCount records received from peer.');
+
+            final peerDeltaMessages = responseDelta['messages'] as List<dynamic>? ?? [];
+            int savedMessages = 0;
+            for (var item in peerDeltaMessages) {
+              final msg = RescuerMessage.fromMap(Map<String, dynamic>.from(item));
+              await localDb.saveRescuerMessage(msg);
+              savedMessages++;
+            }
+
+            debugPrint('Mesh Real BLE DTN: Saved $savedSurvivors survivors and $savedMessages messages received from peer.');
           } catch (e) {
             debugPrint('Mesh Real BLE DTN: Failed to decode peer delta records: $e');
           }
