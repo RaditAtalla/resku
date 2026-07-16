@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../features/survivor/forms/survivor_form_screen.dart';
 import '../features/survivor/guide/first_aid_guide_screen.dart';
-import '../features/survivor/feed/announcements_screen.dart';
 
 // Survivor Mobile App shell layout and bottom navigation.
 class SurvivorApp extends StatefulWidget {
@@ -17,16 +16,33 @@ class _SurvivorAppState extends State<SurvivorApp> {
   final List<Widget> _screens = const [
     SurvivorFormScreen(),
     FirstAidGuideScreen(),
-    AnnouncementsScreen(),
   ];
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Resku Survivor',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        primarySwatch: Colors.red,
+        brightness: Brightness.dark,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: Colors.redAccent,
+          brightness: Brightness.dark,
+          primary: Colors.redAccent,
+          surface: const Color(0xFF1E1E2C),
+        ),
         useMaterial3: true,
+        scaffoldBackgroundColor: const Color(0xFF0F0F15),
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Color(0xFF0F0F15),
+          elevation: 0,
+          centerTitle: true,
+          titleTextStyle: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            letterSpacing: 1.2,
+          ),
+        ),
       ),
       home: Scaffold(
         body: IndexedStack(
@@ -34,20 +50,21 @@ class _SurvivorAppState extends State<SurvivorApp> {
           children: _screens,
         ),
         bottomNavigationBar: BottomNavigationBar(
+          backgroundColor: const Color(0xFF1E1E2C),
+          selectedItemColor: Colors.redAccent,
+          unselectedItemColor: Colors.grey.shade500,
           currentIndex: _currentIndex,
           onTap: (index) => setState(() => _currentIndex = index),
           items: const [
             BottomNavigationBarItem(
-              icon: Icon(Icons.edit_note),
-              label: 'Broadcast Status',
+              icon: Icon(Icons.home_outlined),
+              activeIcon: Icon(Icons.home),
+              label: 'Home',
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.medical_services),
-              label: 'First Aid Guide',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.campaign),
-              label: 'Announcements',
+              icon: Icon(Icons.medical_services_outlined),
+              activeIcon: Icon(Icons.medical_services),
+              label: 'First Aid',
             ),
           ],
         ),
