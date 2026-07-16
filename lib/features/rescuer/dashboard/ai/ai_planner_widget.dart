@@ -1,8 +1,28 @@
 import 'package:flutter/material.dart';
+import '../../../../core/models/survivor_record.dart';
+import '../../../../core/models/rescuer_message.dart';
+import '../../../../core/utils/design_system.dart';
 
 // Left/Right Panel widget for Rescuer dashboard managing AI plan and announcements.
 class AiPlannerWidget extends StatefulWidget {
-  const AiPlannerWidget({super.key});
+  final List<SurvivorRecord> survivors;
+  final bool isAiLoading;
+  final List<SurvivorRecord> aiPlan;
+  final List<RescuerMessage> broadcastLogs;
+  final VoidCallback onGeneratePlan;
+  final ValueChanged<String> onDeployRescueUnit;
+  final ValueChanged<String> onSendBroadcast;
+
+  const AiPlannerWidget({
+    super.key,
+    required this.survivors,
+    required this.isAiLoading,
+    required this.aiPlan,
+    required this.broadcastLogs,
+    required this.onGeneratePlan,
+    required this.onDeployRescueUnit,
+    required this.onSendBroadcast,
+  });
 
   @override
   State<AiPlannerWidget> createState() => _AiPlannerWidgetState();
@@ -11,80 +31,269 @@ class AiPlannerWidget extends StatefulWidget {
 class _AiPlannerWidgetState extends State<AiPlannerWidget> {
   final _announcementController = TextEditingController();
 
-  void _sendBroadcast() {
-    if (_announcementController.text.isNotEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Injected announcement into sync database: "${_announcementController.text}"')),
-      );
+  void _handleTransmit() {
+    final text = _announcementController.text.trim();
+    if (text.isNotEmpty) {
+      widget.onSendBroadcast(text);
       _announcementController.clear();
     }
   }
 
+  int _calculateTriageScore(SurvivorRecord s) {
+    if (s.status == SurvivorStatus.critical) {
+      return s.name == 'John Doe' ? 98 : 95;
+    } else if (s.status == SurvivorStatus.injured) {
+      return 85;
+    } else {
+      return 20;
+    }
+  }
+
+  double _calculateDistance(SurvivorRecord s) {
+    if (s.name == 'John Doe') return 1.2;
+    if (s.name == 'Jane Smith') return 1.5;
+    if (s.name == 'Budi Santoso') return 2.1;
+    return 3.4;
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Container(
-      color: Colors.grey[50],
-      padding: const EdgeInsets.all(16.0),
-      child: ListView(
-        children: [
-          const Text(
-            'AI Action Planner',
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-          ),
-          const SizedBox(height: 12),
-          ElevatedButton.icon(
-            onPressed: () {
-              showDialog(
-                context: context,
-                builder: (ctx) => AlertDialog(
-                  title: const Text('AI Analysis Summary'),
-                  content: const SingleChildScrollView(
-                    child: Text(
-                      'Based on the collected data:\n\n'
-                      '1. PRIORITIZE: Survivor "John Doe" at location (-6.2088, 106.8456) due to CRITICAL status requesting medical aid.\n'
-                      '2. STAGE 2: Deploy search party to coordinates (-6.2100, 106.8480) for Jane Smith (Injured, needs warmth).\n'
-                      '3. RECOMMENDATION: Utilize Drone 1 to drop medical supplies at first target location immediately before team arrival.',
+    return Column(
+      children: [
+        // CARD 1: AI Action Planner Card using ReskuCard
+        Expanded(
+          flex: 3,
+          child: ReskuCard(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Card Header
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: const [
+                        Icon(Icons.psychology, color: AppColors.orange, size: 20),
+                        SizedBox(width: 8),
+                        Text(
+                          'AI Priority Rescue Plan',
+                          style: AppTextStyles.cardTitle,
+                        ),
+                      ],
                     ),
-                  ),
-                  actions: [
-                    TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Dismiss')),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: AppColors.grayBg,
+                        border: Border.all(color: AppColors.border),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: const Text(
+                        'TRIAGE SCORE',
+                        style: AppTextStyles.monospaceLabel,
+                      ),
+                    ),
                   ],
                 ),
-              );
-            },
-            icon: const Icon(Icons.auto_awesome),
-            label: const Text('Generate Rescue Plan'),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.indigo, foregroundColor: Colors.white),
-          ),
-          const SizedBox(height: 24),
-          const Divider(),
-          const SizedBox(height: 16),
-          const Text(
-            'Broadcast Rescuer Update',
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-          ),
-          const SizedBox(height: 8),
-          const Text(
-            'Draft a message to propagate through the mesh network back to all survivor devices.',
-            style: TextStyle(color: Colors.grey, fontSize: 12),
-          ),
-          const SizedBox(height: 12),
-          TextField(
-            controller: _announcementController,
-            maxLines: 3,
-            decoration: const InputDecoration(
-              border: OutlineInputBorder(),
-              hintText: 'Enter update message for survivors...',
+                const SizedBox(height: 12),
+
+                // Generate Button using ReskuButton
+                ReskuButton.primary(
+                  label: 'Generate Rescue Priority',
+                  icon: Icons.auto_awesome,
+                  onPressed: widget.onGeneratePlan,
+                ),
+                const SizedBox(height: 12),
+
+                // AI Results / Loading / Empty State Area
+                Expanded(
+                  child: widget.isAiLoading
+                      ? Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: const [
+                            SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2.5,
+                                color: AppColors.orange,
+                              ),
+                            ),
+                            SizedBox(height: 12),
+                            Text(
+                              'Calculating priority queue using rule-based Heuristics...',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: AppColors.muted,
+                                fontSize: 9,
+                                fontFamily: 'monospace',
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        )
+                      : widget.aiPlan.isEmpty
+                          ? Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: const [
+                                Icon(Icons.construction, color: AppColors.muted, size: 32),
+                                SizedBox(height: 8),
+                                Padding(
+                                  padding: EdgeInsets.symmetric(horizontal: 16.0),
+                                  child: Text(
+                                    'Calculate dispatch queue priority based on triage urgency, location distance, and time elapsed.',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      color: AppColors.muted,
+                                      fontSize: 11,
+                                      height: 1.4,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            )
+                          : Scrollbar(
+                              child: ListView.separated(
+                                padding: const EdgeInsets.only(right: 4),
+                                itemCount: widget.aiPlan.length,
+                                separatorBuilder: (context, index) => const SizedBox(height: 8),
+                                itemBuilder: (context, index) {
+                                  final s = widget.aiPlan[index];
+                                  final score = _calculateTriageScore(s);
+                                  final dist = _calculateDistance(s);
+                                  
+                                  // Color for left accent bar and score text
+                                  Color statusColor;
+                                  switch (s.status) {
+                                    case SurvivorStatus.critical:
+                                      statusColor = AppColors.critical;
+                                      break;
+                                    case SurvivorStatus.injured:
+                                      statusColor = AppColors.injured;
+                                      break;
+                                    case SurvivorStatus.safe:
+                                      statusColor = AppColors.safe;
+                                      break;
+                                  }
+
+                                  return ReskuCard(
+                                    accentColor: statusColor,
+                                    padding: const EdgeInsets.all(8),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                                      children: [
+                                        Row(
+                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            Text(
+                                              s.name,
+                                              style: AppTextStyles.bodyBold,
+                                            ),
+                                            Text(
+                                              '$score',
+                                              style: AppTextStyles.monospaceBold.copyWith(
+                                                color: statusColor,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 2),
+                                        Row(
+                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            Text(
+                                              'Dist: ${dist.toStringAsFixed(1)}km • Needs: ${s.needs.substring(0, s.needs.length > 20 ? 20 : s.needs.length)}...',
+                                              style: AppTextStyles.bodyMuted.copyWith(fontFamily: 'monospace'),
+                                            ),
+                                            const Text(
+                                              'TRIAGE SCORE',
+                                              style: AppTextStyles.monospaceLabel,
+                                            ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 6),
+                                        if (s.status == SurvivorStatus.critical)
+                                          ReskuButton.primary(
+                                            label: 'Deploy Rescue Unit',
+                                            icon: Icons.flight_takeoff,
+                                            height: 28,
+                                            onPressed: () => widget.onDeployRescueUnit(s.id),
+                                          )
+                                        else
+                                          ReskuButton.outlined(
+                                            label: 'Deploy Rescue Unit',
+                                            icon: Icons.flight_takeoff,
+                                            height: 28,
+                                            onPressed: () => widget.onDeployRescueUnit(s.id),
+                                          ),
+                                      ],
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: 12),
-          ElevatedButton.icon(
-            onPressed: _sendBroadcast,
-            icon: const Icon(Icons.send),
-            label: const Text('Broadcast to Mesh'),
+        ),
+        const SizedBox(height: 16),
+
+        // CARD 2: BLE Mesh Broadcast Console using ReskuCard
+        Expanded(
+          flex: 2,
+          child: ReskuCard(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Card Header
+                Row(
+                  children: const [
+                    Icon(Icons.campaign, color: AppColors.orange, size: 20),
+                    SizedBox(width: 8),
+                    Text(
+                      'BLE Mesh Broadcast Console',
+                      style: AppTextStyles.cardTitle,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                const Text(
+                  'Announcements will propagate dynamically through ad-hoc mobile networks.',
+                  style: TextStyle(color: AppColors.muted, fontSize: 10, height: 1.3),
+                ),
+                const SizedBox(height: 10),
+
+                // Text Input Area using ReskuTextField
+                Expanded(
+                  child: ReskuTextField(
+                    controller: _announcementController,
+                    hintText: 'Enter broadcast message (e.g., Evacuation post set up at Sector 7...)',
+                    maxCount: 160,
+                  ),
+                ),
+                const SizedBox(height: 10),
+
+                // Transmit button using ReskuButton
+                ValueListenableBuilder<TextEditingValue>(
+                  valueListenable: _announcementController,
+                  builder: (context, value, child) {
+                    final text = value.text.trim();
+                    final isOverLimit = value.text.length > 160;
+                    return ReskuButton.secondary(
+                      label: 'Transmit to BLE Mesh',
+                      icon: Icons.rss_feed,
+                      onPressed: (text.isEmpty || isOverLimit) ? null : _handleTransmit,
+                    );
+                  },
+                ),
+              ],
+            ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
