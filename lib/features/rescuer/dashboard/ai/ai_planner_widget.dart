@@ -153,85 +153,83 @@ class _AiPlannerWidgetState extends State<AiPlannerWidget> {
                                 ),
                               ],
                             )
-                          : Scrollbar(
-                              child: ListView.separated(
-                                padding: const EdgeInsets.only(right: 4),
-                                itemCount: widget.aiPlan.length,
-                                separatorBuilder: (context, index) => const SizedBox(height: 8),
-                                itemBuilder: (context, index) {
-                                  final s = widget.aiPlan[index];
-                                  final score = _calculateTriageScore(s);
-                                  final dist = _calculateDistance(s);
-                                  
-                                  // Color for left accent bar and score text
-                                  Color statusColor;
-                                  switch (s.status) {
-                                    case SurvivorStatus.critical:
-                                      statusColor = AppColors.critical;
-                                      break;
-                                    case SurvivorStatus.injured:
-                                      statusColor = AppColors.injured;
-                                      break;
-                                    case SurvivorStatus.safe:
-                                      statusColor = AppColors.safe;
-                                      break;
-                                  }
+                          : ListView.separated(
+                              padding: const EdgeInsets.only(right: 4),
+                              itemCount: widget.aiPlan.length,
+                              separatorBuilder: (context, index) => const SizedBox(height: 8),
+                              itemBuilder: (context, index) {
+                                final s = widget.aiPlan[index];
+                                final score = _calculateTriageScore(s);
+                                final dist = _calculateDistance(s);
+                                
+                                // Color for left accent bar and score text
+                                Color statusColor;
+                                switch (s.status) {
+                                  case SurvivorStatus.critical:
+                                    statusColor = AppColors.critical;
+                                    break;
+                                  case SurvivorStatus.injured:
+                                    statusColor = AppColors.injured;
+                                    break;
+                                  case SurvivorStatus.safe:
+                                    statusColor = AppColors.safe;
+                                    break;
+                                }
 
-                                  return ReskuCard(
-                                    accentColor: statusColor,
-                                    padding: const EdgeInsets.all(8),
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                                      children: [
-                                        Row(
-                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                          children: [
-                                            Text(
-                                              s.name,
-                                              style: AppTextStyles.bodyBold,
-                                            ),
-                                            Text(
-                                              '$score',
-                                              style: AppTextStyles.monospaceBold.copyWith(
-                                                color: statusColor,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                        const SizedBox(height: 2),
-                                        Row(
-                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                          children: [
-                                            Text(
-                                              'Dist: ${dist.toStringAsFixed(1)}km • Needs: ${s.needs.substring(0, s.needs.length > 20 ? 20 : s.needs.length)}...',
-                                              style: AppTextStyles.bodyMuted.copyWith(fontFamily: 'monospace'),
-                                            ),
-                                            const Text(
-                                              'TRIAGE SCORE',
-                                              style: AppTextStyles.monospaceLabel,
-                                            ),
-                                          ],
-                                        ),
-                                        const SizedBox(height: 6),
-                                        if (s.status == SurvivorStatus.critical)
-                                          ReskuButton.primary(
-                                            label: 'Deploy Rescue Unit',
-                                            icon: Icons.flight_takeoff,
-                                            height: 28,
-                                            onPressed: () => widget.onDeployRescueUnit(s.id),
-                                          )
-                                        else
-                                          ReskuButton.outlined(
-                                            label: 'Deploy Rescue Unit',
-                                            icon: Icons.flight_takeoff,
-                                            height: 28,
-                                            onPressed: () => widget.onDeployRescueUnit(s.id),
+                                return ReskuCard(
+                                  accentColor: statusColor,
+                                  padding: const EdgeInsets.all(8),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                                    children: [
+                                      Row(
+                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Text(
+                                            s.name,
+                                            style: AppTextStyles.bodyBold,
                                           ),
-                                      ],
-                                    ),
-                                  );
-                                },
-                              ),
+                                          Text(
+                                            '$score',
+                                            style: AppTextStyles.monospaceBold.copyWith(
+                                              color: statusColor,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Row(
+                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Text(
+                                            'Dist: ${dist.toStringAsFixed(1)}km • Needs: ${s.needs.substring(0, s.needs.length > 20 ? 20 : s.needs.length)}...',
+                                            style: AppTextStyles.bodyMuted.copyWith(fontFamily: 'monospace'),
+                                          ),
+                                          const Text(
+                                            'TRIAGE SCORE',
+                                            style: AppTextStyles.monospaceLabel,
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 6),
+                                      if (s.status == SurvivorStatus.critical)
+                                        ReskuButton.primary(
+                                          label: 'Deploy Rescue Unit',
+                                          icon: Icons.flight_takeoff,
+                                          height: 28,
+                                          onPressed: () => widget.onDeployRescueUnit(s.id),
+                                        )
+                                      else
+                                        ReskuButton.outlined(
+                                          label: 'Deploy Rescue Unit',
+                                          icon: Icons.flight_takeoff,
+                                          height: 28,
+                                          onPressed: () => widget.onDeployRescueUnit(s.id),
+                                        ),
+                                    ],
+                                  ),
+                                );
+                              },
                             ),
                 ),
               ],

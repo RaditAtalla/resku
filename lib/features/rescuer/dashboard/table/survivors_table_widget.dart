@@ -83,197 +83,195 @@ class SurvivorsTableWidget extends StatelessWidget {
               ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(8),
-                child: Scrollbar(
-                  child: ListView(
-                    padding: EdgeInsets.zero,
-                    children: [
-                      // Sticky table header row
-                      Container(
-                        decoration: const BoxDecoration(
-                          color: AppColors.grayBg,
-                          border: Border(
-                            bottom: BorderSide(color: AppColors.border),
-                          ),
-                        ),
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                        child: Row(
-                          children: [
-                            const Expanded(
-                              flex: 3,
-                              child: Text(
-                                'NAME',
-                                style: AppTextStyles.bodyMuted,
-                              ),
-                            ),
-                            const Expanded(
-                              flex: 2,
-                              child: Text(
-                                'TRIAGE STATUS',
-                                style: AppTextStyles.bodyMuted,
-                              ),
-                            ),
-                            const Expanded(
-                              flex: 4,
-                              child: Text(
-                                'PRIMARY NEEDS',
-                                style: AppTextStyles.bodyMuted,
-                              ),
-                            ),
-                            Expanded(
-                              flex: 3,
-                              child: Text(
-                                'COORDINATES',
-                                textAlign: TextAlign.right,
-                                style: AppTextStyles.bodyMuted,
-                              ),
-                            ),
-                            Expanded(
-                              flex: 2,
-                              child: Text(
-                                'TIMESTAMP',
-                                textAlign: TextAlign.right,
-                                style: AppTextStyles.bodyMuted,
-                              ),
-                            ),
-                            Expanded(
-                              flex: 2,
-                              child: Text(
-                                'ACTION',
-                                textAlign: TextAlign.center,
-                                style: AppTextStyles.bodyMuted,
-                              ),
-                            ),
-                          ],
+                child: ListView(
+                  padding: EdgeInsets.zero,
+                  children: [
+                    // Sticky table header row
+                    Container(
+                      decoration: const BoxDecoration(
+                        color: AppColors.grayBg,
+                        border: Border(
+                          bottom: BorderSide(color: AppColors.border),
                         ),
                       ),
-
-                      // Roster rows
-                      if (filteredSurvivors.isEmpty)
-                        const Padding(
-                          padding: EdgeInsets.symmetric(vertical: 32),
-                          child: Center(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      child: Row(
+                        children: [
+                          const Expanded(
+                            flex: 3,
                             child: Text(
-                              'No records match the current filters.',
-                              style: TextStyle(
-                                color: AppColors.muted,
-                                fontSize: 11,
-                                fontStyle: FontStyle.italic,
-                              ),
+                              'NAME',
+                              style: AppTextStyles.bodyMuted,
                             ),
                           ),
-                        )
-                      else
-                        ...filteredSurvivors.map((survivor) {
-                          final isFocused = survivor.id == focusedSurvivorId;
-                          return Container(
-                            decoration: BoxDecoration(
-                              color: isFocused
-                                  ? const Color(0x0FFC5200) // ~6% opacity Strava Orange
-                                  : Colors.white,
-                              border: const Border(
-                                bottom: BorderSide(color: AppColors.border),
-                              ),
+                          const Expanded(
+                            flex: 2,
+                            child: Text(
+                              'TRIAGE STATUS',
+                              style: AppTextStyles.bodyMuted,
                             ),
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                            child: Row(
-                              children: [
-                                // Name
-                                Expanded(
-                                  flex: 3,
-                                  child: Text(
-                                    survivor.name,
-                                    style: AppTextStyles.bodyBold,
+                          ),
+                          const Expanded(
+                            flex: 4,
+                            child: Text(
+                              'PRIMARY NEEDS',
+                              style: AppTextStyles.bodyMuted,
+                            ),
+                          ),
+                          Expanded(
+                            flex: 3,
+                            child: Text(
+                              'COORDINATES',
+                              textAlign: TextAlign.right,
+                              style: AppTextStyles.bodyMuted,
+                            ),
+                          ),
+                          Expanded(
+                            flex: 2,
+                            child: Text(
+                              'TIMESTAMP',
+                              textAlign: TextAlign.right,
+                              style: AppTextStyles.bodyMuted,
+                            ),
+                          ),
+                          Expanded(
+                            flex: 2,
+                            child: Text(
+                              'ACTION',
+                              textAlign: TextAlign.center,
+                              style: AppTextStyles.bodyMuted,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    // Roster rows
+                    if (filteredSurvivors.isEmpty)
+                      const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 32),
+                        child: Center(
+                          child: Text(
+                            'No records match the current filters.',
+                            style: TextStyle(
+                              color: AppColors.muted,
+                              fontSize: 11,
+                              fontStyle: FontStyle.italic,
+                            ),
+                          ),
+                        ),
+                      )
+                    else
+                      ...filteredSurvivors.map((survivor) {
+                        final isFocused = survivor.id == focusedSurvivorId;
+                        return Container(
+                          decoration: BoxDecoration(
+                            color: isFocused
+                                ? const Color(0x0FFC5200) // ~6% opacity Strava Orange
+                                : Colors.white,
+                            border: const Border(
+                              bottom: BorderSide(color: AppColors.border),
+                            ),
+                          ),
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          child: Row(
+                            children: [
+                              // Name
+                              Expanded(
+                                flex: 3,
+                                child: Text(
+                                  survivor.name,
+                                  style: AppTextStyles.bodyBold,
+                                ),
+                              ),
+
+                              // Triage Status
+                              Expanded(
+                                flex: 2,
+                                child: Align(
+                                  alignment: Alignment.centerLeft,
+                                  child: ReskuBadge(status: survivor.status),
+                                ),
+                              ),
+
+                              // Needs
+                              Expanded(
+                                flex: 4,
+                                child: Text(
+                                  survivor.needs,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: AppTextStyles.bodyRegular.copyWith(
+                                    color: AppColors.muted,
                                   ),
                                 ),
+                              ),
 
-                                // Triage Status
-                                Expanded(
-                                  flex: 2,
-                                  child: Align(
-                                    alignment: Alignment.centerLeft,
-                                    child: ReskuBadge(status: survivor.status),
-                                  ),
+                              // Coordinates
+                              Expanded(
+                                flex: 3,
+                                child: Text(
+                                  '${survivor.latitude.toStringAsFixed(4)}, ${survivor.longitude.toStringAsFixed(4)}',
+                                  textAlign: TextAlign.right,
+                                  style: AppTextStyles.monospaceLabel,
                                 ),
+                              ),
 
-                                // Needs
-                                Expanded(
-                                  flex: 4,
-                                  child: Text(
-                                    survivor.needs,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: AppTextStyles.bodyRegular.copyWith(
-                                      color: AppColors.muted,
-                                    ),
-                                  ),
+                              // Timestamp
+                              Expanded(
+                                flex: 2,
+                                child: Text(
+                                  _formatTime(survivor.timestamp),
+                                  textAlign: TextAlign.right,
+                                  style: AppTextStyles.monospaceLabel,
                                 ),
+                              ),
 
-                                // Coordinates
-                                Expanded(
-                                  flex: 3,
-                                  child: Text(
-                                    '${survivor.latitude.toStringAsFixed(4)}, ${survivor.longitude.toStringAsFixed(4)}',
-                                    textAlign: TextAlign.right,
-                                    style: AppTextStyles.monospaceLabel,
-                                  ),
-                                ),
-
-                                // Timestamp
-                                Expanded(
-                                  flex: 2,
-                                  child: Text(
-                                    _formatTime(survivor.timestamp),
-                                    textAlign: TextAlign.right,
-                                    style: AppTextStyles.monospaceLabel,
-                                  ),
-                                ),
-
-                                // Locate button
-                                Expanded(
-                                  flex: 2,
-                                  child: Align(
-                                    alignment: Alignment.center,
-                                    child: SizedBox(
-                                      height: 26,
-                                      child: OutlinedButton(
-                                        style: OutlinedButton.styleFrom(
-                                          side: BorderSide(
-                                            color: isFocused
-                                                ? AppColors.orange
-                                                : AppColors.border,
-                                          ),
-                                          backgroundColor: isFocused
+                              // Locate button
+                              Expanded(
+                                flex: 2,
+                                child: Align(
+                                  alignment: Alignment.center,
+                                  child: SizedBox(
+                                    height: 26,
+                                    child: OutlinedButton(
+                                      style: OutlinedButton.styleFrom(
+                                        side: BorderSide(
+                                          color: isFocused
                                               ? AppColors.orange
-                                              : Colors.white,
-                                          foregroundColor: isFocused
-                                              ? Colors.white
-                                              : AppColors.black,
-                                          padding: const EdgeInsets.symmetric(horizontal: 8),
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(4),
-                                          ),
+                                              : AppColors.border,
                                         ),
-                                        onPressed: () {
-                                          onSurvivorSelected(survivor.id);
-                                        },
-                                        child: const Text(
-                                          'Locate',
-                                          style: TextStyle(
-                                            fontFamily: 'Inter',
-                                            fontSize: 9,
-                                            fontWeight: FontWeight.bold,
-                                          ),
+                                        backgroundColor: isFocused
+                                            ? AppColors.orange
+                                            : Colors.white,
+                                        foregroundColor: isFocused
+                                            ? Colors.white
+                                            : AppColors.black,
+                                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(4),
+                                        ),
+                                      ),
+                                      onPressed: () {
+                                        onSurvivorSelected(survivor.id);
+                                      },
+                                      child: const Text(
+                                        'Locate',
+                                        style: TextStyle(
+                                          fontFamily: 'Inter',
+                                          fontSize: 9,
+                                          fontWeight: FontWeight.bold,
                                         ),
                                       ),
                                     ),
                                   ),
                                 ),
-                              ],
-                            ),
-                          );
-                        }),
-                    ],
-                  ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }),
+                  ],
                 ),
               ),
             ),
