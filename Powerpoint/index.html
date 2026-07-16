@@ -1,0 +1,1275 @@
+<!DOCTYPE html>
+<html lang="id" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resku Pitch Deck Presentation (Interactive Template)</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Fonts: Inter & Lora -->
+    <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,500;0,700;1,400&family=Inter:wght@300;400;500;600;700;800&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background-color: #09090b;
+            color: #f4f4f5;
+            font-family: 'Inter', sans-serif;
+        }
+        .font-title {
+            font-family: 'Lora', Georgia, serif;
+        }
+        /* Fixed Slide display bug by using !important on none and flex active */
+        .slide {
+            display: none !important;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+        .slide.active {
+            display: flex !important;
+            opacity: 1;
+            transform: translateY(0);
+        }
+        /* Highlight editable areas slightly on hover to guide the user */
+        [contenteditable="true"] {
+            outline: none;
+            transition: background-color 0.2s ease, border-color 0.2s ease;
+            border-bottom: 1px dashed rgba(245, 158, 11, 0.2);
+            padding: 2px 4px;
+            border-radius: 4px;
+        }
+        [contenteditable="true"]:hover {
+            background-color: rgba(245, 158, 11, 0.05);
+            border-bottom-color: rgba(245, 158, 11, 0.6);
+        }
+        [contenteditable="true"]:focus {
+            background-color: rgba(245, 158, 11, 0.1);
+            border-bottom-color: #f59e0b;
+            border-bottom-style: solid;
+        }
+        .custom-scroll::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scroll::-webkit-scrollbar-track {
+            background: #18181b;
+        }
+        .custom-scroll::-webkit-scrollbar-thumb {
+            background: #3f3f46;
+            border-radius: 3px;
+        }
+        .custom-scroll::-webkit-scrollbar-thumb:hover {
+            background: #f59e0b;
+        }
+    
+        @keyframes radar-sweep {
+            from {
+                transform: rotate(0deg);
+            }
+            to {
+                transform: rotate(360deg);
+            }
+        }
+        .radar-sweep-effect {
+            animation: radar-sweep 8s linear infinite;
+            transform-origin: 150px 150px;
+        }
+        @keyframes pulse-ring {
+            0% {
+                transform: scale(0.95);
+                opacity: 0.8;
+            }
+            50% {
+                transform: scale(1.05);
+                opacity: 0.4;
+            }
+            100% {
+                transform: scale(0.95);
+                opacity: 0.8;
+            }
+        }
+        .pulse-ring-effect {
+            animation: pulse-ring 3s ease-in-out infinite;
+            transform-origin: center;
+        }
+    
+    </style>
+</head>
+<body class="h-screen w-screen flex flex-row overflow-hidden relative selection:bg-amber-500/30 selection:text-amber-200">
+    <!-- Background Grid and Glow -->
+    <div class="absolute inset-0 bg-[linear-gradient(rgba(245,158,11,0.01)_1px,transparent_1px),linear-gradient(90deg,rgba(245,158,11,0.01)_1px,transparent_1px)] bg-[size:40px_40px] pointer-events-none"></div>
+    <div class="absolute inset-0 bg-[radial-gradient(circle_at_bottom_right,rgba(245,158,11,0.04),transparent_70%)] pointer-events-none"></div>
+
+    <!-- LEFT SIDEBAR: Slide Navigation List -->
+    <aside class="w-80 h-full bg-zinc-950/80 border-r border-zinc-800/80 flex flex-col z-20">
+        <!-- Logo and Brand -->
+        <div class="p-6 border-b border-zinc-900 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <span class="material-symbols-outlined text-amber-500 text-3xl animate-pulse">sensors</span>
+                <div>
+                    <h1 class="font-title font-bold text-lg text-zinc-100 tracking-wide">Resku</h1>
+                    <p class="text-[10px] text-zinc-500 font-mono tracking-widest uppercase">Pitch Deck 2026</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar Slide Navigation -->
+        <nav class="flex-1 overflow-y-auto custom-scroll p-4 space-y-1">
+            <div class="text-[10px] text-zinc-600 font-mono uppercase tracking-wider px-3 mb-2 flex justify-between items-center">
+                <span>Daftar Slide</span>
+                <span class="text-[9px] text-amber-500 font-bold">MODE EDIT</span>
+            </div>
+            <ul id="sidebar-nav-list" class="space-y-1 text-xs">
+                <!-- Dynamically generated list items will appear here -->
+            </ul>
+        </nav>
+
+        <!-- Save Indicator and Reset Button -->
+        <div class="p-4 border-t border-zinc-900 flex flex-col gap-2 bg-zinc-950/40">
+            <div class="flex items-center justify-between text-[10px]">
+                <span class="text-zinc-500">Auto-Save:</span>
+                <span id="save-status" class="text-emerald-500 font-semibold flex items-center gap-1">
+                    <span class="h-1.5 w-1.5 bg-emerald-500 rounded-full"></span> Tersimpan
+                </span>
+            </div>
+            <div class="flex gap-2">
+                <button id="reset-data-btn" class="flex-1 py-1.5 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 hover:border-zinc-700 text-zinc-400 text-[10px] rounded font-mono transition-colors">
+                    Reset Template
+                </button>
+                <button id="export-data-btn" class="flex-1 py-1.5 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 text-amber-500 text-[10px] rounded font-mono transition-colors">
+                    Ekspor Salinan
+                </button>
+            </div>
+        </div>
+    </aside>
+
+    <!-- RIGHT CONTENT AREA: Slides and Controls -->
+    <main class="flex-1 h-full flex flex-col relative z-10 overflow-hidden">
+        
+        <!-- Header -->
+        <header class="h-16 border-b border-zinc-900/50 px-8 flex items-center justify-between bg-zinc-900/10 backdrop-blur-sm">
+            <div class="flex items-center gap-4">
+                <div id="slide-topic-badge" class="px-3 py-1 bg-amber-500/10 border border-amber-500/20 text-amber-500 text-xs font-semibold rounded-full uppercase tracking-wider font-mono">
+                    Introduction
+                </div>
+                <div class="text-[10px] text-zinc-500 font-mono flex items-center gap-1">
+                    <span class="material-symbols-outlined text-xs">edit_note</span> Klik tulisan apa saja untuk mengubahnya
+                </div>
+            </div>
+            <div class="flex items-center gap-4 text-xs text-zinc-400">
+                <span id="slide-index-counter">Slide 1 dari 17</span>
+                <div class="h-1.5 w-32 bg-zinc-800 rounded-full overflow-hidden">
+                    <div id="progress-bar" class="h-full bg-amber-500 transition-all duration-300" style="width: 6.25%;"></div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Slide container (Fixed height overflow-y-auto to allow scrolling of long slides) -->
+        <section class="flex-1 overflow-y-auto p-6 lg:p-10 flex items-start justify-center">
+            <div id="slides-wrapper" class="w-full max-w-5xl min-h-full flex items-center justify-center py-4">
+                
+                <!-- SLIDE 1: Cover -->
+                <div id="slide-0" class="slide active w-full flex flex-col items-center text-center justify-center">
+                    <span class="material-symbols-outlined text-amber-500 text-7xl mb-6 animate-bounce">sensors</span>
+                    <h1 id="edit-slide0-title" contenteditable="true" class="font-title font-bold text-5xl lg:text-6xl text-amber-500 mb-4 tracking-wide leading-tight">
+                        RESKU: Bridging the Grid
+                    </h1>
+                    <p id="edit-slide0-desc" contenteditable="true" class="text-zinc-400 text-lg lg:text-xl max-w-2xl font-light mb-8">
+                        Offline-First Emergency Communication Mesh Network untuk Keberlanjutan Komunikasi Tanggap Darurat Bencana Alam
+                    </p>
+                    <div class="flex items-center gap-3 bg-zinc-900/50 border border-zinc-800 px-4 py-2.5 rounded-full text-xs text-zinc-400">
+                        <span class="h-2 w-2 bg-emerald-500 rounded-full animate-ping"></span>
+                        <span id="edit-slide0-badge" contenteditable="true">Model Bisnis, Finansial, Teknologi & Rencana Dampak 2026</span>
+                    </div>
+                </div>
+
+                <!-- SLIDE 2: Market Fit -->
+                <div id="slide-1" class="slide w-full flex-col justify-center gap-6">
+                    <div class="border-b border-zinc-800 pb-4">
+                        <h2 id="edit-slide1-header" contenteditable="true" class="font-title font-bold text-3xl text-amber-500">1. Product-Market Fit (Masalah & Peluang)</h2>
+                        <p id="edit-slide1-subheader" contenteditable="true" class="text-sm text-zinc-400 mt-1">Mengapa pasar membutuhkan solusi komunikasi darurat berbasis mesh network?</p>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-2">
+                        <!-- Problem Card -->
+                        <div class="p-6 bg-zinc-900/40 border border-zinc-800 rounded-2xl flex flex-col justify-between">
+                            <div>
+                                <span class="material-symbols-outlined text-rose-500 text-3xl mb-3">grid_off</span>
+                                <h3 id="edit-slide1-prob-title" contenteditable="true" class="text-lg font-bold text-zinc-100 mb-2">Masalah di Pasar (Pain)</h3>
+                                <ul id="edit-slide1-prob-list" contenteditable="true" class="text-sm text-zinc-400 space-y-3">
+                                    <li>• Infrastruktur seluler (BTS) hancur atau kehilangan daya saat bencana, menciptakan area mati sinyal total.</li>
+                                    <li>• Pusat komando penyelamat terisolasi dari data lapangan selama "Golden 72 Hours" pasca-bencana.</li>
+                                    <li>• Korban kritis tidak terdata secara prioritas, memperlambat proses triase medis.</li>
+                                </ul>
+                            </div>
+                            <div id="edit-slide1-prob-footer" contenteditable="true" class="mt-6 text-xs font-mono text-rose-400 uppercase tracking-wider">Komunikasi Terputus = Nyawa Hilang</div>
+                        </div>
+
+                        <!-- Solution Card -->
+                        <div class="p-6 bg-zinc-900/40 border border-zinc-800 rounded-2xl flex flex-col justify-between">
+                            <div>
+                                <span class="material-symbols-outlined text-amber-500 text-3xl mb-3">fit_screen</span>
+                                <h3 id="edit-slide1-sol-title" contenteditable="true" class="text-lg font-bold text-zinc-100 mb-2">Kesesuaian Solusi (Market Fit)</h3>
+                                <ul id="edit-slide1-sol-list" contenteditable="true" class="text-sm text-zinc-400 space-y-3">
+                                    <li>• <strong>Zero-Infrastructure Mesh</strong>: Smartphone korban langsung membentuk jaringan BLE tanpa perlu sinyal GSM/Internet.</li>
+                                    <li>• <strong>Data Muling dengan Drone</strong>: Relawan dan drone mengumpulkan data dari mesh secara pasif untuk dikirim ke pusat komando.</li>
+                                    <li>• <strong>Kecocokan B2G/B2NGO</strong>: Membantu pemerintah (SAR) dan NGO mempercepat koordinasi bantuan di lapangan bencana.</li>
+                                </ul>
+                            </div>
+                            <div id="edit-slide1-sol-footer" contenteditable="true" class="mt-6 text-xs font-mono text-amber-400 uppercase tracking-wider">Aktivasi Sinyal Evakuasi Instan</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SLIDE 3: User Experience -->
+                <div id="slide-2" class="slide w-full flex-col justify-center gap-6">
+                    <div class="border-b border-zinc-800 pb-4">
+                        <h2 id="edit-slide2-header" contenteditable="true" class="font-title font-bold text-3xl text-amber-500">2. User Experience (UX) Journey</h2>
+                        <p id="edit-slide2-subheader" contenteditable="true" class="text-sm text-zinc-400 mt-1">Interaksi visual premium yang mulus dan intuitif bagi semua pemangku kepentingan</p>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <!-- Survivor Interface UX -->
+                        <div class="p-5 bg-zinc-900/50 border border-zinc-800/80 rounded-2xl flex flex-col gap-4">
+                            <span class="material-symbols-outlined text-amber-500 text-3xl">record_voice_over</span>
+                            <div>
+                                <h3 id="edit-slide2-ux1-title" contenteditable="true" class="font-bold text-sm uppercase tracking-wider text-zinc-100">1. Survivor App UX</h3>
+                                <p id="edit-slide2-ux1-desc" contenteditable="true" class="text-xs text-zinc-400 mt-2 leading-relaxed">
+                                    Formulir triage satu halaman dengan kontras tinggi untuk efisiensi visual di bawah tekanan panik. Slider visual intuitif menentukan status (Aman, Cedera, Kritis). Dilengkapi panduan P3K offline berbasis markdown untuk dibaca instan.
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Rescuer Collector App UX -->
+                        <div class="p-5 bg-zinc-900/50 border border-zinc-800/80 rounded-2xl flex flex-col gap-4">
+                            <span class="material-symbols-outlined text-amber-500 text-3xl">radar</span>
+                            <div>
+                                <h3 id="edit-slide2-ux2-title" contenteditable="true" class="font-bold text-sm uppercase tracking-wider text-zinc-100">2. Collector Field UX</h3>
+                                <p id="edit-slide2-ux2-desc" contenteditable="true" class="text-xs text-zinc-400 mt-2 leading-relaxed">
+                                    Mode pemindaian radar pasif. Petugas penyelamat atau drone cukup mengaktifkan pemindaian otomatis sambil bergerak. Grafik visual menunjukkan jumlah data survivor yang berhasil "ditarik" dan disinkronkan ke pangkalan data internal secara beruntun.
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Command Center Dashboard UX -->
+                        <div class="p-5 bg-zinc-900/50 border border-zinc-800/80 rounded-2xl flex flex-col gap-4">
+                            <span class="material-symbols-outlined text-amber-500 text-3xl">map</span>
+                            <div>
+                                <h3 id="edit-slide2-ux3-title" contenteditable="true" class="font-bold text-sm uppercase tracking-wider text-zinc-100">3. Dashboard Commander UX</h3>
+                                <p id="edit-slide2-ux3-desc" contenteditable="true" class="text-xs text-zinc-400 mt-2 leading-relaxed">
+                                    Tampilan peta interaktif (offline OSM) dengan pin berwarna neon yang dikategorikan berdasarkan skala prioritas cedera. Menyediakan antarmuka satu-klik untuk memproses evakuasi dan mengirimkan pengumuman baru ke dalam mesh.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                
+                <!-- SLIDE 4: Empty Map View -->
+                <div id="slide-3" class="slide w-full flex-col justify-center gap-6">
+                    <div class="border-b border-zinc-800 pb-4">
+                        <h2 id="edit-slide3b-header" contenteditable="true" class="font-title font-bold text-3xl text-amber-500">3. Peta Taktis Kosong (Empty Map View)</h2>
+                        <p id="edit-slide3b-subheader" contenteditable="true" class="text-sm text-zinc-400 mt-1">Desain antarmuka ketika pusat komando baru didirikan dan belum menerima data dari mesh.</p>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center mt-2">
+                        <!-- Left: High-Fidelity Empty Map Mockup -->
+                        <div class="lg:col-span-7 flex justify-center">
+                            <div class="w-full max-w-lg bg-zinc-950 border border-zinc-800/80 rounded-2xl p-4 flex flex-col relative overflow-hidden aspect-[4/3] shadow-2xl">
+                                <!-- Mockup Header -->
+                                <div class="flex items-center justify-between border-b border-zinc-900 pb-3 mb-2 text-[10px] font-mono text-zinc-500">
+                                    <div class="flex items-center gap-1.5">
+                                        <span class="h-2 w-2 bg-amber-500 rounded-full animate-pulse"></span>
+                                        <span>RESKU COMMAND CENTER • ALPHA-7</span>
+                                    </div>
+                                    <span>COORD GRID: OFFLINE CANVAS</span>
+                                </div>
+
+                                <!-- Map Canvas Area -->
+                                <div class="flex-1 bg-zinc-900/60 border border-zinc-900 rounded-xl relative overflow-hidden flex items-center justify-center">
+                                    <!-- Grid Lines Pattern (SVG) -->
+                                    <svg class="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg">
+                                        <defs>
+                                            <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+                                                <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#27272a" stroke-width="0.75" />
+                                            </pattern>
+                                        </defs>
+                                        <rect width="100%" height="100%" fill="url(#grid)" />
+                                    </svg>
+
+                                    <!-- Concentric Radar Sweep rings -->
+                                    <svg class="absolute w-[300px] h-[300px]" viewBox="0 0 300 300">
+                                        <!-- Concentric Circles -->
+                                        <circle cx="150" cy="150" r="50" fill="none" stroke="#3f3f46" stroke-width="1" stroke-dasharray="2 2" />
+                                        <circle cx="150" cy="150" r="100" fill="none" stroke="#27272a" stroke-width="1" />
+                                        <circle cx="150" cy="150" r="130" fill="none" stroke="#27272a" stroke-width="1" class="pulse-ring-effect" />
+                                        
+                                        <!-- Radar Sweep Line Rotating -->
+                                        <g class="radar-sweep-effect">
+                                            <line x1="150" y1="150" x2="150" y2="20" stroke="#f59e0b" stroke-width="1.5" stroke-linecap="round" class="opacity-80" />
+                                            <polygon points="150,150 150,20 180,25" fill="url(#radar-gradient)" class="opacity-20" />
+                                        </g>
+                                        <defs>
+                                            <linearGradient id="radar-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                                <stop offset="0%" stop-color="#f59e0b" stop-opacity="0.8" />
+                                                <stop offset="100%" stop-color="#f59e0b" stop-opacity="0" />
+                                            </linearGradient>
+                                        </defs>
+                                    </svg>
+
+                                    <!-- Glowing Base Camp Pin at Center -->
+                                    <div class="absolute flex flex-col items-center z-10">
+                                        <div class="relative flex items-center justify-center">
+                                            <div class="absolute h-8 w-8 bg-amber-500/20 rounded-full animate-ping"></div>
+                                            <div class="h-4 w-4 bg-amber-500 rounded-full border-2 border-zinc-950 flex items-center justify-center">
+                                                <span class="h-1.5 w-1.5 bg-zinc-950 rounded-full"></span>
+                                            </div>
+                                        </div>
+                                        <div class="mt-1.5 px-2 py-0.5 bg-amber-500 text-zinc-950 text-[8px] font-mono font-bold rounded shadow-md">
+                                            BASE POST
+                                        </div>
+                                    </div>
+
+                                    <!-- HUD Indicators -->
+                                    <!-- Coordinates Bounds (Bottom Left) -->
+                                    <div class="absolute bottom-3 left-3 text-[8px] font-mono text-zinc-500 leading-normal bg-zinc-950/80 border border-zinc-900/60 p-1.5 rounded">
+                                        LAT: -6.2050 TO -6.2150<br>LNG: 106.8400 TO 106.8550
+                                    </div>
+
+                                    <!-- Search Overlay Box (Top Left) -->
+                                    <div class="absolute top-3 left-3 bg-zinc-950/90 border border-zinc-800/60 rounded px-2 py-1 w-40 flex items-center gap-1.5 shadow-md">
+                                        <span class="material-symbols-outlined text-[10px] text-zinc-500">search</span>
+                                        <span class="text-[8px] text-zinc-500 font-sans">Cari penyintas...</span>
+                                    </div>
+
+                                    <!-- Status Badge (Top Right) -->
+                                    <div class="absolute top-3 right-3 bg-amber-500/10 border border-amber-500/20 text-amber-500 text-[8px] font-mono font-bold rounded px-1.5 py-0.5 flex items-center gap-1 animate-pulse">
+                                        <span class="h-1 w-1 bg-amber-500 rounded-full"></span>
+                                        <span>SCANNING MESH...</span>
+                                    </div>
+
+                                    <!-- Legend Box (Bottom Right) -->
+                                    <div class="absolute bottom-3 right-3 bg-zinc-950/85 border border-zinc-900/80 p-1.5 rounded text-[8px] font-mono text-zinc-500 flex flex-col gap-1 shadow-md">
+                                        <div class="flex items-center gap-1">
+                                            <span class="h-1.5 w-1.5 bg-rose-500 rounded-full"></span> <span>Kritis</span>
+                                        </div>
+                                        <div class="flex items-center gap-1">
+                                            <span class="h-1.5 w-1.5 bg-amber-500 rounded-full"></span> <span>Cedera</span>
+                                        </div>
+                                        <div class="flex items-center gap-1">
+                                            <span class="h-1.5 w-1.5 bg-emerald-500 rounded-full"></span> <span>Aman</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Right: Key UX Features & Analysis -->
+                        <div class="lg:col-span-5 space-y-4 text-xs">
+                            <div class="p-4 bg-zinc-900/40 border border-zinc-850 rounded-xl space-y-2">
+                                <h4 id="edit-slide3b-feat1-title" contenteditable="true" class="font-bold text-amber-500 uppercase tracking-wider text-[10px]">1. Radar Sweep Animation</h4>
+                                <p id="edit-slide3b-feat1-desc" contenteditable="true" class="text-zinc-400 leading-relaxed">
+                                    Animasi garis penyapu melingkar kuning neon memberikan umpan balik visual instan kepada operator komando bahwa sistem radar BLE Mesh aktif memindai sinyal peer.
+                                </p>
+                            </div>
+
+                            <div class="p-4 bg-zinc-900/40 border border-zinc-850 rounded-xl space-y-2">
+                                <h4 id="edit-slide3b-feat2-title" contenteditable="true" class="font-bold text-amber-500 uppercase tracking-wider text-[10px]">2. Zero Internet Coordinates</h4>
+                                <p id="edit-slide3b-feat2-desc" contenteditable="true" class="text-zinc-400 leading-relaxed">
+                                    Peta didesain menggunakan koordinat lokal interpolasi pixel. Pusat komando dapat memplot posisi survivor langsung tanpa bergantung pada ketersediaan API Google Maps atau koneksi satelit.
+                                </p>
+                            </div>
+
+                            <div class="p-4 bg-zinc-900/40 border border-zinc-850 rounded-xl space-y-2">
+                                <h4 id="edit-slide3b-feat3-title" contenteditable="true" class="font-bold text-amber-500 uppercase tracking-wider text-[10px]">3. Clean Initial State</h4>
+                                <p id="edit-slide3b-feat3-desc" contenteditable="true" class="text-zinc-400 leading-relaxed">
+                                    Menyediakan visualisasi yang rapi dan bersih dari polusi informasi. Begitu relawan pembawa data (data mule) tiba di base camp, data koordinat langsung di-render berupa pin menyala.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SLIDE 5: Technology & Novelty -->
+                <div id="slide-4" class="slide w-full flex-col justify-center gap-4">
+                    <div class="border-b border-zinc-800 pb-4">
+                        <h2 id="edit-slide3-header" contenteditable="true" class="font-title font-bold text-3xl text-amber-500">3. Teknologi, Arsitektur, & Novelty</h2>
+                        <p id="edit-slide3-subheader" contenteditable="true" class="text-sm text-zinc-400 mt-1">Mengapa arsitektur Resku unggul, unik, dan memiliki novelty tinggi?</p>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
+                        <!-- BLE Loop Info -->
+                        <div class="p-4 bg-zinc-900/40 border border-zinc-800 rounded-xl">
+                            <h4 id="edit-slide3-tech1-title" contenteditable="true" class="font-bold text-xs uppercase tracking-wider text-amber-500 mb-2">Dynamic Role-Switching</h4>
+                            <p id="edit-slide3-tech1-desc" contenteditable="true" class="text-xs text-zinc-400 leading-relaxed">
+                                Mengatasi batasan platform iOS/Android dengan membagi siklus kerja BLE secara ketat: 10 detik memancarkan data (Peripheral) dan 5 detik memindai peer (Central). Menjamin pertukaran data dua arah tanpa gangguan koneksi terus-menerus.
+                            </p>
+                        </div>
+                        
+                        <!-- Routing Info -->
+                        <div class="p-4 bg-zinc-900/40 border border-zinc-800 rounded-xl">
+                            <h4 id="edit-slide3-tech2-title" contenteditable="true" class="font-bold text-xs uppercase tracking-wider text-amber-500 mb-2">Epidemic Routing & LUV</h4>
+                            <p id="edit-slide3-tech2-desc" contenteditable="true" class="text-xs text-zinc-400 leading-relaxed">
+                                Menggunakan *Latest Update Vector* (LUV) untuk mencocokkan riwayat pesan antar perangkat. Hanya menyinkronkan selisih (delta) data baru guna menghemat *throughput* transmisi BLE yang terbatas dan menjaga efisiensi baterai.
+                            </p>
+                        </div>
+                        
+                        <!-- Novelty Info -->
+                        <div class="p-4 bg-zinc-900/40 border border-zinc-800 rounded-xl">
+                            <h4 id="edit-slide3-tech3-title" contenteditable="true" class="font-bold text-xs uppercase tracking-wider text-amber-500 mb-2">Local AI Decision Support</h4>
+                            <p id="edit-slide3-tech3-desc" contenteditable="true" class="text-xs text-zinc-400 leading-relaxed">
+                                AI lokal berbasis Small Language Model (SLM) terkuantisasi (ringan, RAM kecil, tanpa GPU tinggi). Berfungsi menganalisis kepadatan penduduk, estimasi logistik/material darurat, biaya operasional (RAB), dan karakteristik medan longsor/banjir secara 100% offline untuk membantu pengambilan keputusan taktis tim SAR.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Flow Diagram -->
+                    <div class="p-4 bg-zinc-950 border border-zinc-850 rounded-xl flex items-center justify-between gap-4 mt-1 font-mono text-[10px] text-zinc-400">
+                        <div class="flex-1 text-center p-2 bg-zinc-900 border border-zinc-800 rounded">
+                            <div class="text-amber-500 font-bold mb-1">Survivor Node</div>
+                            <span id="edit-slide3-flow1" contenteditable="true">Input Data -> BLE Peripheral (Advertise LUV)</span>
+                        </div>
+                        <span class="material-symbols-outlined text-amber-500">arrow_forward</span>
+                        <div class="flex-1 text-center p-2 bg-zinc-900 border border-zinc-800 rounded">
+                            <div class="text-amber-500 font-bold mb-1">Collector Node</div>
+                            <span id="edit-slide3-flow2" contenteditable="true">Scans & Connects -> Aggregates DB -> Starts Wi-Fi Server</span>
+                        </div>
+                        <span class="material-symbols-outlined text-amber-500">arrow_forward</span>
+                        <div class="flex-1 text-center p-2 bg-zinc-900 border border-zinc-800 rounded">
+                            <div class="text-amber-500 font-bold mb-1">Dashboard Node</div>
+                            <span id="edit-slide3-flow3" contenteditable="true">Downloads DB -> Maps Locations -> AI Triage Calculation</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SLIDE 6: Competitor Analysis & UVP -->
+                <div id="slide-5" class="slide w-full flex-col justify-center gap-6">
+                    <div class="border-b border-zinc-800 pb-4">
+                        <h2 id="edit-slide4-header" contenteditable="true" class="font-title font-bold text-3xl text-amber-500">4. Competitor Analysis & Unique Value Propositions (UVP)</h2>
+                        <p id="edit-slide4-subheader" contenteditable="true" class="text-sm text-zinc-400 mt-1">Bagaimana posisi kompetitif Resku dibandingkan solusi pasar yang ada? (Silakan edit kolom/baris sesuai data riil)</p>
+                    </div>
+
+                    <div class="overflow-x-auto w-full mt-2">
+                        <table class="w-full text-left border-collapse text-xs">
+                            <thead>
+                                <tr class="border-b border-zinc-800 text-zinc-400">
+                                    <th class="py-2.5 font-bold">Fitur / Kategori</th>
+                                    <th id="edit-slide4-col1" contenteditable="true" class="py-2.5 font-bold text-amber-500">Resku Mesh (Smartphone)</th>
+                                    <th id="edit-slide4-col2" contenteditable="true" class="py-2.5 font-bold">Meshtastic (LoRa)</th>
+                                    <th id="edit-slide4-col3" contenteditable="true" class="py-2.5 font-bold">Garmin InReach (Satellite)</th>
+                                    <th id="edit-slide4-col4" contenteditable="true" class="py-2.5 font-bold">Apple Emergency SOS</th>
+                                </tr>
+                            </thead>
+                            <tbody id="edit-slide4-table-body" contenteditable="true" class="divide-y divide-zinc-900 text-zinc-300">
+                                <tr>
+                                    <td class="py-3 font-semibold">Biaya Perangkat Pengguna</td>
+                                    <td class="py-3 text-amber-400 font-medium">Rp 0 (Memakai HP yang ada)</td>
+                                    <td class="py-3">Rp 800k - Rp 1.5M (Alat LoRa)</td>
+                                    <td class="py-3">Rp 6.5M+ (Alat Satelit)</td>
+                                    <td class="py-3">Hanya di HP Flagship baru</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-3 font-semibold">Biaya Berlangganan Korban</td>
+                                    <td class="py-3 text-amber-400 font-medium">Gratis Selamanya</td>
+                                    <td class="py-3">Gratis (Open Source)</td>
+                                    <td class="py-3">Bulanan ($15 - $60)</td>
+                                    <td class="py-3">Terbatas (Masa tenggang)</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-3 font-semibold">Skalabilitas Komunikasi Massal</td>
+                                    <td class="py-3 text-amber-400 font-medium">Sangat Tinggi (P2P Mesh)</td>
+                                    <td class="py-3">Sedang (Terbatas bandwidth)</td>
+                                    <td class="py-3">Rendah (Hanya point-to-point)</td>
+                                    <td class="py-3">Sangat Rendah (Satu per satu)</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-3 font-semibold">Integrasi AI Triage Penyelamat</td>
+                                    <td class="py-3 text-amber-400 font-medium">Ada (Lokal & SLM Offline)</td>
+                                    <td class="py-3">Tidak Ada</td>
+                                    <td class="py-3">Tidak Ada</td>
+                                    <td class="py-3">Tidak Ada</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div id="edit-slide4-uvp-box" contenteditable="true" class="p-4 bg-amber-500/5 border border-amber-500/10 rounded-xl text-xs text-amber-400 leading-relaxed">
+                        <strong>UVP Utama:</strong> Menghilangkan hambatan finansial dan logistik bagi korban bencana dengan memanfaatkan perangkat keras (smartphone) yang sudah mereka bawa di saku mereka untuk penyelamatan jiwa berbasis AI.
+                    </div>
+                </div>
+
+                <!-- SLIDE 7: Value Proposition Canvas -->
+                <div id="slide-6" class="slide w-full flex-col justify-center gap-6">
+                    <div class="border-b border-zinc-800 pb-4">
+                        <h2 id="edit-slide5-header" contenteditable="true" class="font-title font-bold text-3xl text-amber-500">5. Value Proposition Canvas (VPC)</h2>
+                        <p id="edit-slide5-subheader" contenteditable="true" class="text-sm text-zinc-400 mt-1">Penyelarasan kebutuhan pengguna bencana dengan fungsionalitas produk Resku</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-2 text-xs">
+                        <!-- Customer Segment (Disaster Survivor & Rescuer) -->
+                        <div class="p-5 bg-zinc-900/40 border border-zinc-800 rounded-2xl space-y-4">
+                            <h3 id="edit-slide5-seg-title" contenteditable="true" class="text-sm font-bold text-zinc-200 border-b border-zinc-800 pb-2 flex items-center gap-2">
+                                <span class="material-symbols-outlined text-rose-500">person</span>
+                                Target Segment (Survivor & Rescuer)
+                            </h3>
+                            
+                            <div>
+                                <span class="font-bold text-amber-500">Customer Jobs:</span>
+                                <p id="edit-slide5-jobs" contenteditable="true" class="text-zinc-400">Melaporkan titik koordinat darurat, mengabarkan status kesehatan secara instan, serta berkoordinasi menyebarkan misi pencarian.</p>
+                            </div>
+                            
+                            <div>
+                                <span class="font-bold text-rose-500">Pains (Kendala):</span>
+                                <p id="edit-slide5-pains" contenteditable="true" class="text-zinc-400">Kehilangan daya baterai secara cepat saat panik, kepungan berita hoaks yang menyesatkan arah evakuasi, dan lamanya waktu pencarian manual.</p>
+                            </div>
+
+                            <div>
+                                <span class="font-bold text-emerald-500">Gains (Harapan):</span>
+                                <p id="edit-slide5-gains" contenteditable="true" class="text-zinc-400">Mendapatkan pertolongan triage medis lebih awal, menerima instruksi titik evakuasi yang valid, serta menggunakan peta rute secara offline.</p>
+                            </div>
+                        </div>
+
+                        <!-- Value Map (Resku Ecosystem) -->
+                        <div class="p-5 bg-zinc-900/40 border border-zinc-800 rounded-2xl space-y-4">
+                            <h3 id="edit-slide5-val-title" contenteditable="true" class="text-sm font-bold text-zinc-200 border-b border-zinc-800 pb-2 flex items-center gap-2">
+                                <span class="material-symbols-outlined text-amber-500">bolt</span>
+                                Value Map (Solusi Resku)
+                            </h3>
+
+                            <div>
+                                <span class="font-bold text-amber-500">Products & Services:</span>
+                                <p id="edit-slide5-products" contenteditable="true" class="text-zinc-400">Aplikasi mobile Survivor (BLE mesh), Collector App (data aggregator offline), dan Rescuer Command Center Dashboard.</p>
+                            </div>
+
+                            <div>
+                                <span class="font-bold text-rose-500">Pain Relievers:</span>
+                                <p id="edit-slide5-relievers" contenteditable="true" class="text-zinc-400">Protokol sinkronisasi hemat daya (baterai hemat hingga 72 jam), tanda tangan enkripsi anti-hoaks pada pengumuman, dan triage terintegrasi.</p>
+                            </div>
+
+                            <div>
+                                <span class="font-bold text-emerald-500">Gain Creators:</span>
+                                <p id="edit-slide5-creators" contenteditable="true" class="text-zinc-400">Rute evakuasi otomatis yang dioptimasi AI, panduan medis P3K offline instan, dan visualisasi pemetaan koordinat visual pada peta offline.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SLIDE 8: Market Size -->
+                <div id="slide-7" class="slide w-full flex-col justify-center gap-6">
+                    <div class="border-b border-zinc-800 pb-4">
+                        <h2 id="edit-slide6-header" contenteditable="true" class="font-title font-bold text-3xl text-amber-500">6. Estimasi Ukuran Pasar (TAM, SAM, SOM)</h2>
+                        <p id="edit-slide6-subheader" contenteditable="true" class="text-sm text-zinc-400 mt-1">Potensi komersialisasi platform di tingkat nasional dan global (Masukkan data riil Anda)</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-center mt-2">
+                        <!-- Circular Diagram Visual -->
+                        <div class="flex justify-center">
+                            <svg class="w-72 h-72" viewBox="0 0 300 300">
+                                <!-- TAM Outer Circle -->
+                                <circle cx="150" cy="150" r="130" fill="none" stroke="#d97706" stroke-width="1.5" stroke-dasharray="4 4" class="opacity-30" />
+                                <circle cx="150" cy="150" r="130" fill="rgba(245,158,11,0.01)" />
+                                
+                                <!-- SAM Middle Circle -->
+                                <circle cx="150" cy="150" r="90" fill="none" stroke="#f59e0b" stroke-width="2" class="opacity-60" />
+                                <circle cx="150" cy="150" r="90" fill="rgba(245,158,11,0.02)" />
+
+                                <!-- SOM Inner Circle -->
+                                <circle cx="150" cy="150" r="50" fill="rgba(245,158,11,0.1)" stroke="#f59e0b" stroke-width="3" />
+                                
+                                <!-- Text Labels inside circles -->
+                                <text x="150" y="60" text-anchor="middle" fill="#a1a1aa" font-size="10" font-family="monospace">TAM</text>
+                                <text x="150" y="100" text-anchor="middle" fill="#d4d4d8" font-size="10" font-family="monospace">SAM</text>
+                                <text x="150" y="153" text-anchor="middle" fill="#ffffff" font-size="12" font-weight="bold" font-family="monospace">SOM</text>
+                            </svg>
+                        </div>
+
+                        <!-- Explanation Cards -->
+                        <div class="space-y-4 text-xs">
+                            <div class="p-4 bg-zinc-900/40 border border-zinc-800 rounded-xl">
+                                <h3 class="font-bold text-zinc-100 flex justify-between">
+                                    <span>TAM (Total Addressable Market)</span>
+                                    <span id="edit-slide6-tam-val" contenteditable="true" class="text-amber-500 font-mono font-bold">USD 48.2 Miliar</span>
+                                </h3>
+                                <p id="edit-slide6-tam-desc" contenteditable="true" class="text-zinc-400 mt-1">Ukuran pasar global manajemen tanggap darurat dan teknologi komunikasi penyelamatan bencana.</p>
+                            </div>
+                            
+                            <div class="p-4 bg-zinc-900/40 border border-zinc-800 rounded-xl">
+                                <h3 class="font-bold text-zinc-100 flex justify-between">
+                                    <span>SAM (Serviceable Addressable Market)</span>
+                                    <span id="edit-slide6-sam-val" contenteditable="true" class="text-amber-500 font-mono font-bold">USD 1.8 Miliar</span>
+                                </h3>
+                                <p id="edit-slide6-sam-desc" contenteditable="true" class="text-zinc-400 mt-1">Anggaran pengadaan software darurat dan komunikasi mitigasi di Asia Tenggara (fokus wilayah rawan patahan tektonik).</p>
+                            </div>
+
+                            <div class="p-4 bg-zinc-900/40 border border-zinc-800 rounded-xl">
+                                <h3 class="font-bold text-zinc-100 flex justify-between">
+                                    <span>SOM (Serviceable Obtainable Market)</span>
+                                    <span id="edit-slide6-som-val" contenteditable="true" class="text-amber-500 font-mono font-bold">USD 45 Juta</span>
+                                </h3>
+                                <p id="edit-slide6-som-desc" contenteditable="true" class="text-zinc-400 mt-1">Anggaran alokasi instansi BNPB, BASARNAS, BPBD provinsi rawan gempa (Yogyakarta, Bali, Sumbar) di Indonesia.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SLIDE 9: Business Model Canvas -->
+                <div id="slide-8" class="slide w-full flex-col justify-center gap-4">
+                    <div class="border-b border-zinc-800 pb-2">
+                        <h2 id="edit-slide7-header" contenteditable="true" class="font-title font-bold text-2xl text-amber-500">7. Business Model Canvas (BMC)</h2>
+                        <p id="edit-slide7-subheader" contenteditable="true" class="text-xs text-zinc-400 mt-0.5">Struktur fundamental operasional dan monetisasi bisnis Resku (Semua blok dapat diedit)</p>
+                    </div>
+
+                    <!-- 9 Building Blocks Grid -->
+                    <div id="bmc-grid-editable" contenteditable="true" class="grid grid-cols-5 grid-rows-2 gap-3 mt-1 text-[9px] leading-relaxed">
+                        <!-- Key Partners -->
+                        <div class="p-3 bg-zinc-900/40 border border-zinc-800 rounded-xl row-span-2 flex flex-col justify-between">
+                            <div>
+                                <div class="font-bold text-zinc-100 mb-1 flex items-center gap-1">
+                                    <span class="material-symbols-outlined text-[12px] text-amber-500">handshake</span> Key Partners
+                                </div>
+                                <ul class="text-zinc-400 space-y-1">
+                                    <li>• BNPB & BASARNAS</li>
+                                    <li>• BPBD & Pemda</li>
+                                    <li>• PMI & NGO Bencana</li>
+                                    <li>• Manufaktur Beacon & Drone</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <!-- Key Activities -->
+                        <div class="p-3 bg-zinc-900/40 border border-zinc-800 rounded-xl flex flex-col justify-between">
+                            <div>
+                                <div class="font-bold text-zinc-100 mb-1 flex items-center gap-1">
+                                    <span class="material-symbols-outlined text-[12px] text-amber-500">engineering</span> Key Activities
+                                </div>
+                                <ul class="text-zinc-400 space-y-1">
+                                    <li>• R&D BLE Mesh</li>
+                                    <li>• Integrasi AI Triage</li>
+                                    <li>• Pemeliharaan Peta Offline</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <!-- Value Propositions -->
+                        <div class="p-3 bg-zinc-900/40 border border-zinc-800 rounded-xl row-span-2 flex flex-col justify-between">
+                            <div>
+                                <div class="font-bold text-zinc-100 mb-1 flex items-center gap-1">
+                                    <span class="material-symbols-outlined text-[12px] text-amber-500">star</span> Value Propositions
+                                </div>
+                                <ul class="text-zinc-400 space-y-1">
+                                    <li>• Komunikasi mesh BLE tanpa internet seluler</li>
+                                    <li>• Dashboard terintegrasi GPS & Triase</li>
+                                    <li>• Optimalisasi rute penyelamatan berbasis AI</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <!-- Customer Relationships -->
+                        <div class="p-3 bg-zinc-900/40 border border-zinc-800 rounded-xl flex flex-col justify-between">
+                            <div>
+                                <div class="font-bold text-zinc-100 mb-1 flex items-center gap-1">
+                                    <span class="material-symbols-outlined text-[12px] text-amber-500">favorite</span> Relationships
+                                </div>
+                                <ul class="text-zinc-400 space-y-1">
+                                    <li>• Kontrak SLA Multi-tahun</li>
+                                    <li>• Open-source community contributions</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <!-- Customer Segments -->
+                        <div class="p-3 bg-zinc-900/40 border border-zinc-800 rounded-xl row-span-2 flex flex-col justify-between">
+                            <div>
+                                <div class="font-bold text-zinc-100 mb-1 flex items-center gap-1">
+                                    <span class="material-symbols-outlined text-[12px] text-amber-500">groups</span> Segments
+                                </div>
+                                <ul class="text-zinc-400 space-y-1">
+                                    <li>• Pemda & BPBD Daerah</li>
+                                    <li>• Lembaga Kemanusiaan Internasional</li>
+                                    <li>• Komunitas Relawan & Warga Rawan Gempa</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <!-- Key Resources -->
+                        <div class="p-3 bg-zinc-900/40 border border-zinc-800 rounded-xl flex flex-col justify-between">
+                            <div>
+                                <div class="font-bold text-zinc-100 mb-1 flex items-center gap-1">
+                                    <span class="material-symbols-outlined text-[12px] text-amber-500">inventory_2</span> Key Resources
+                                </div>
+                                <ul class="text-zinc-400 space-y-1">
+                                    <li>• Paten Protokol Mesh</li>
+                                    <li>• Heuristic AI Engine</li>
+                                    <li>• Dataset Peta Spasial</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <!-- Channels -->
+                        <div class="p-3 bg-zinc-900/40 border border-zinc-800 rounded-xl flex flex-col justify-between">
+                            <div>
+                                <div class="font-bold text-zinc-100 mb-1 flex items-center gap-1">
+                                    <span class="material-symbols-outlined text-[12px] text-amber-500">campaign</span> Channels
+                                </div>
+                                <ul class="text-zinc-400 space-y-1">
+                                    <li>• Tender B2G Pemerintah</li>
+                                    <li>• App Store & Google Play</li>
+                                    <li>• Kemitraan Instansi NGO</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <!-- Cost Structure -->
+                        <div class="p-3 bg-zinc-900/40 border border-zinc-800 rounded-xl col-span-2.5 flex flex-col justify-between">
+                            <div>
+                                <div class="font-bold text-zinc-100 mb-1 flex items-center gap-1">
+                                    <span class="material-symbols-outlined text-[12px] text-amber-500">payments</span> Cost Structure
+                                </div>
+                                <p class="text-zinc-400">R&D Software, Infrastruktur Server AI, Produksi Hardware Beacon/Drones, Pelatihan Lapangan & Sertifikasi Relawan.</p>
+                            </div>
+                        </div>
+
+                        <!-- Revenue Streams -->
+                        <div class="p-3 bg-zinc-900/40 border border-zinc-800 rounded-xl col-span-2.5 flex flex-col justify-between">
+                            <div>
+                                <div class="font-bold text-zinc-100 mb-1 flex items-center gap-1">
+                                    <span class="material-symbols-outlined text-[12px] text-amber-500">account_balance_wallet</span> Revenue Streams
+                                </div>
+                                <p class="text-zinc-400">SaaS Command Dashboard License, Penjualan Hardware Resku Hub (Beacons), Kemitraan Payload Drones, Layanan Integrasi GIS.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SLIDE 10: Business Model Overview -->
+                <div id="slide-9" class="slide w-full flex-col justify-center gap-6">
+                    <div class="border-b border-zinc-800 pb-4">
+                        <h2 id="edit-slide8-header" contenteditable="true" class="font-title font-bold text-3xl text-amber-500">8. Model Bisnis & Skema Pendapatan</h2>
+                        <p id="edit-slide8-subheader" contenteditable="true" class="text-sm text-zinc-400 mt-1">Strategi monetisasi terstruktur untuk penetrasi berkelanjutan</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-2 text-xs">
+                        <!-- SaaS Model -->
+                        <div class="p-5 bg-zinc-900/40 border border-zinc-800 rounded-xl space-y-3">
+                            <span class="material-symbols-outlined text-amber-500 text-3xl">cloud</span>
+                            <h3 id="edit-slide8-biz1-title" contenteditable="true" class="text-base font-bold text-zinc-100">B2G & B2B SaaS Tiers</h3>
+                            <p id="edit-slide8-biz1-desc" contenteditable="true" class="text-zinc-400 leading-relaxed">
+                                Penyewaan akses penuh ke platform *Rescuer Web Dashboard* untuk kebutuhan komando. Langganan meliputi pembaruan data spasial offline peta daerah, integrasi asisten cerdas Local AI DSS (analisis medan, estimasi anggaran, logistik, dan kepadatan penduduk secara offline), dan analitik performa jaringan di lapangan.
+                            </p>
+                            <div id="edit-slide8-biz1-footer" contenteditable="true" class="text-[10px] font-mono text-zinc-500">Target Pelanggan: Pemerintah Daerah & Dinas Penyelamat Kota.</div>
+                        </div>
+
+                        <!-- Hardware Model -->
+                        <div class="p-5 bg-zinc-900/40 border border-zinc-800 rounded-xl space-y-3">
+                            <span class="material-symbols-outlined text-amber-500 text-3xl">router</span>
+                            <h3 id="edit-slide8-biz2-title" contenteditable="true" class="text-base font-bold text-zinc-100">Integrasi Perangkat Keras (Hardware Sales)</h3>
+                            <p id="edit-slide8-biz2-desc" contenteditable="true" class="text-zinc-400 leading-relaxed">
+                                Penjualan fisik pemancar BLE terenkripsi (*Resku Hub*) bertransmisi radius 10 meter yang mencakup volume ruang bencana **±4.000 m³ (meter kubik)** per beacon. Serta modul pemindai BLE untuk dipasang pada drone patroli tim penolong (*Drone payload*).
+                            </p>
+                            <div id="edit-slide8-biz2-footer" contenteditable="true" class="text-[10px] font-mono text-zinc-500">Target Pelanggan: BPBD Provinsi & Organisasi NGO Kemanusiaan Internasional.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SLIDE 11: Finance B2G -->
+                <div id="slide-10" class="slide w-full flex-col justify-center gap-6">
+                    <div class="border-b border-zinc-800 pb-4">
+                        <h2 id="edit-slide9-header" contenteditable="true" class="font-title font-bold text-3xl text-amber-500">9. Finansial Segmen Pemerintah (B2G)</h2>
+                        <p id="edit-slide9-subheader" contenteditable="true" class="text-sm text-zinc-400 mt-1">Struktur biaya (HPP), harga jual, margin keuntungan, dan pendekatan tender pemerintah</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-2 text-xs">
+                        <!-- Pricing Card -->
+                        <div class="p-5 bg-zinc-900/40 border border-zinc-800 rounded-xl flex flex-col justify-between">
+                            <div>
+                                <h3 id="edit-slide9-price-title" contenteditable="true" class="font-bold text-zinc-300 text-sm uppercase tracking-wider mb-2">Nilai Paket & Pendekatan</h3>
+                                <div id="edit-slide9-price-val" contenteditable="true" class="text-2xl font-bold text-amber-500 font-mono mb-2">Rp 45.000.000</div>
+                                <p id="edit-slide9-price-desc" contenteditable="true" class="text-zinc-400 leading-relaxed">
+                                    Paket per wilayah Kabupaten/Kota. Lisensi Dashboard 1 tahun + 20 unit Resku Hub Beacons + Pelatihan Lapangan Bersertifikat untuk Relawan Lokal.
+                                </p>
+                            </div>
+                            <div id="edit-slide9-price-footer" contenteditable="true" class="mt-4 pt-4 border-t border-zinc-800 text-[10px] text-zinc-500">Metode: Penunjukan Langsung / E-Katalog LKPP</div>
+                        </div>
+
+                        <!-- HPP Card -->
+                        <div class="p-5 bg-zinc-900/40 border border-zinc-800 rounded-xl flex flex-col justify-between">
+                            <div>
+                                <h3 id="edit-slide9-hpp-title" contenteditable="true" class="font-bold text-zinc-300 text-sm uppercase tracking-wider mb-2">Struktur Biaya (HPP)</h3>
+                                <div id="edit-slide9-hpp-val" contenteditable="true" class="text-2xl font-bold text-zinc-200 font-mono mb-2">Rp 25.000.000</div>
+                                <ul id="edit-slide9-hpp-list" contenteditable="true" class="text-zinc-400 space-y-1 mt-2">
+                                    <li>• Produksi Beacon (20 x Rp 350rb) = Rp 7jt</li>
+                                    <li>• Biaya Operasional Pelatihan = Rp 8jt</li>
+                                    <li>• Paket Data GIS & Lisensi Server = Rp 10jt</li>
+                                </ul>
+                            </div>
+                            <div id="edit-slide9-hpp-footer" contenteditable="true" class="mt-4 pt-4 border-t border-zinc-800 text-[10px] text-zinc-500">Biaya produksi ditekan dengan modul BLE standar industri</div>
+                        </div>
+
+                        <!-- Profit Card -->
+                        <div class="p-5 bg-zinc-900/40 border border-zinc-800 rounded-xl flex flex-col justify-between">
+                            <div>
+                                <h3 id="edit-slide9-margin-title" contenteditable="true" class="font-bold text-zinc-300 text-sm uppercase tracking-wider mb-2">Gross Profit Margin</h3>
+                                <div id="edit-slide9-margin-pct" contenteditable="true" class="text-2xl font-bold text-emerald-500 font-mono mb-2">44.4%</div>
+                                <div id="edit-slide9-margin-val" contenteditable="true" class="text-lg font-bold text-zinc-200 font-mono">Rp 20.000.000</div>
+                                <p id="edit-slide9-margin-desc" contenteditable="true" class="text-zinc-400 mt-2 leading-relaxed">
+                                    Keuntungan kotor yang dialokasikan untuk pembiayaan R&D kompresi data BLE mesh, pemeliharaan AI Lokal, dan cadangan operasional bencana.
+                                </p>
+                            </div>
+                            <div id="edit-slide9-margin-footer" contenteditable="true" class="mt-4 pt-4 border-t border-zinc-800 text-[10px] text-zinc-500">Keberlanjalan finansial jangka panjang terjamin</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SLIDE 12: Finance B2G (Jakarta Case Study) -->
+                <div id="slide-11" class="slide w-full flex-col justify-center gap-6">
+                    <div class="border-b border-zinc-800 pb-4">
+                        <h2 id="edit-slide10j-header" contenteditable="true" class="font-title font-bold text-3xl text-amber-500">9b. Studi Kasus B2G: Provinsi DKI Jakarta</h2>
+                        <p id="edit-slide10j-subheader" contenteditable="true" class="text-sm text-zinc-400 mt-1">Analisis kebutuhan jangkauan dan perbandingan efisiensi biaya megacity Jakarta (Harga Lama vs Baru)</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-2 text-xs">
+                        <!-- Coverage Card -->
+                        <div class="p-5 bg-zinc-900/40 border border-zinc-800 rounded-xl flex flex-col justify-between">
+                            <div>
+                                <h3 class="font-bold text-zinc-300 text-sm uppercase tracking-wider mb-2">Kebutuhan Jakarta</h3>
+                                <div class="text-3xl font-bold text-amber-500 font-mono mb-2">800 Beacon</div>
+                                <ul class="text-zinc-400 space-y-2 mt-2 leading-relaxed">
+                                    <li>• Mencakup **267 Kelurahan** (rata-rata 3 beacon per titik kumpul kritis kelurahan).</li>
+                                    <li>• **Jangkauan Reruntuhan**: **3.200.000 m³** volume reruntuhan gedung terproteksi.</li>
+                                    <li>• **Jangkauan Terbuka**: **25,1 km²** area titik evakuasi mesh BLE.</li>
+                                </ul>
+                            </div>
+                            <div class="text-[10px] text-zinc-500 font-mono pt-4 border-t border-zinc-800">Menghubungkan 100% titik kumpul darurat resmi Jakarta</div>
+                        </div>
+
+                        <!-- Price Comparison Card -->
+                        <div class="p-5 bg-zinc-900/40 border border-zinc-800 rounded-xl flex flex-col justify-between">
+                            <div>
+                                <h3 class="font-bold text-zinc-300 text-sm uppercase tracking-wider mb-2">Perbandingan Nilai Proyek</h3>
+                                <div class="space-y-3 mt-2">
+                                    <div>
+                                        <div class="text-rose-500 text-xs font-bold uppercase">Harga Lama (7.8 Miliar):</div>
+                                        <div class="text-lg font-bold text-zinc-400 font-mono">Rp 7.800.000.000</div>
+                                    </div>
+                                    <div class="pt-2 border-t border-zinc-850">
+                                        <div class="text-emerald-500 text-xs font-bold uppercase">Harga Baru (1.8 Miliar):</div>
+                                        <div class="text-xl font-bold text-emerald-400 font-mono">Rp 1.800.000.000</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mt-4 pt-4 border-t border-zinc-800 text-[10px] text-zinc-500">Penurunan HPP Beacon melahirkan efisiensi masal</div>
+                        </div>
+
+                        <!-- Competitive Advantage Card -->
+                        <div class="p-5 bg-zinc-900/40 border border-zinc-800 rounded-xl flex flex-col justify-between">
+                            <div>
+                                <h3 class="font-bold text-zinc-300 text-sm uppercase tracking-wider mb-2">Keunggulan Kompetitif</h3>
+                                <div class="text-3xl font-bold text-emerald-500 font-mono mb-2">Hemat 77%</div>
+                                <div class="text-sm font-bold text-zinc-200 mb-2">Pemprov DKI Hemat Rp 6 Miliar</div>
+                                <p class="text-zinc-400 leading-relaxed font-light">
+                                    Pengadaan dapat dipecah per Kota Administrasi di bawah Rp 500jt. Hal ini memangkas waktu birokrasi karena memungkinkan mekanisme penunjukan langsung darurat tanpa tender APBD yang lama.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SLIDE 13: Finance B2NGO -->
+                <div id="slide-12" class="slide w-full flex-col justify-center gap-6">
+                    <div class="border-b border-zinc-800 pb-4">
+                        <h2 id="edit-slide10-header" contenteditable="true" class="font-title font-bold text-3xl text-amber-500">10. Finansial Segmen Non-Government (B2NGO)</h2>
+                        <p id="edit-slide10-subheader" contenteditable="true" class="text-sm text-zinc-400 mt-1">Struktur biaya (HPP), harga jual, margin keuntungan, dan pendekatan bantuan kemanusiaan</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-2 text-xs">
+                        <!-- Pricing Card -->
+                        <div class="p-5 bg-zinc-900/40 border border-zinc-800 rounded-xl flex flex-col justify-between">
+                            <div>
+                                <h3 id="edit-slide10-price-title" contenteditable="true" class="font-bold text-zinc-300 text-sm uppercase tracking-wider mb-2">Nilai Paket & Pendekatan</h3>
+                                <div id="edit-slide10-price-val" contenteditable="true" class="text-2xl font-bold text-amber-500 font-mono mb-2">Rp 27.500.000</div>
+                                <p id="edit-slide10-price-desc" contenteditable="true" class="text-zinc-400 leading-relaxed">
+                                    Paket deployment operasi tanggap bencana. Lisensi Dashboard 1 tahun + 10 unit Resku Hub Beacons + 2 Unit Smartphone Ruggedized Collector.
+                                </p>
+                            </div>
+                            <div id="edit-slide10-price-footer" contenteditable="true" class="mt-4 pt-4 border-t border-zinc-800 text-[10px] text-zinc-500">Metode: Proposal Program Kemitraan Kemanusiaan Internasional</div>
+                        </div>
+
+                        <!-- HPP Card -->
+                        <div class="p-5 bg-zinc-900/40 border border-zinc-800 rounded-xl flex flex-col justify-between">
+                            <div>
+                                <h3 id="edit-slide10-hpp-title" contenteditable="true" class="font-bold text-zinc-300 text-sm uppercase tracking-wider mb-2">Struktur Biaya (HPP)</h3>
+                                <div id="edit-slide10-hpp-val" contenteditable="true" class="text-2xl font-bold text-zinc-200 font-mono mb-2">Rp 15.000.000</div>
+                                <ul id="edit-slide10-hpp-list" contenteditable="true" class="text-zinc-400 space-y-1 mt-2">
+                                    <li>• Produksi Beacon (10 x Rp 350rb) = Rp 3.5jt</li>
+                                    <li>• 2 HP Ruggedized Collector = Rp 4.0jt</li>
+                                    <li>• Biaya Setup & Pengiriman Lapangan = Rp 7.5jt</li>
+                                </ul>
+                            </div>
+                            <div id="edit-slide10-hpp-footer" contenteditable="true" class="mt-4 pt-4 border-t border-zinc-800 text-[10px] text-zinc-500">Pengurangan jumlah beacon diimbangi oleh HP Collector tangguh</div>
+                        </div>
+
+                        <!-- Profit Card -->
+                        <div class="p-5 bg-zinc-900/40 border border-zinc-800 rounded-xl flex flex-col justify-between">
+                            <div>
+                                <h3 id="edit-slide10-margin-title" contenteditable="true" class="font-bold text-zinc-300 text-sm uppercase tracking-wider mb-2">Gross Profit Margin</h3>
+                                <div id="edit-slide10-margin-pct" contenteditable="true" class="text-2xl font-bold text-emerald-500 font-mono mb-2">45.5%</div>
+                                <div id="edit-slide10-margin-val" contenteditable="true" class="text-lg font-bold text-zinc-200 font-mono">Rp 12.500.000</div>
+                                <p id="edit-slide10-margin-desc" contenteditable="true" class="text-zinc-400 mt-2 leading-relaxed">
+                                    Margin keuntungan dialokasikan untuk pemeliharaan modul offline *emergency protocol* dan kontribusi donasi aplikasi survivor gratis di app store.
+                                </p>
+                            </div>
+                            <div id="edit-slide10-margin-footer" contenteditable="true" class="mt-4 pt-4 border-t border-zinc-800 text-[10px] text-zinc-500">Subsidi silang untuk operasional di daerah miskin</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SLIDE 14: GTM Strategy -->
+                <div id="slide-13" class="slide w-full flex-col justify-center gap-6">
+                    <div class="border-b border-zinc-800 pb-4">
+                        <h2 id="edit-slide11-header" contenteditable="true" class="font-title font-bold text-3xl text-amber-500">11. Go-To-Market (GTM) & Early Adopter</h2>
+                        <p id="edit-slide11-subheader" contenteditable="true" class="text-sm text-zinc-400 mt-1">Strategi penetrasi pasar bertahap untuk membangun adopsi mesh yang kokoh</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-2 text-xs">
+                        <!-- Early Adopter -->
+                        <div class="p-5 bg-zinc-900/50 border border-zinc-800 rounded-xl flex flex-col justify-between">
+                            <div>
+                                <h3 id="edit-slide11-gtm1-title" contenteditable="true" class="font-bold text-zinc-100 mb-3 flex items-center gap-2">
+                                    <span class="material-symbols-outlined text-amber-500">flag</span>
+                                    1. Early Adopters
+                                </h3>
+                                <p id="edit-slide11-gtm1-desc" contenteditable="true" class="text-zinc-400 leading-relaxed mb-4">
+                                    <strong>BPBD D.I. Yogyakarta & Bali</strong>: Provinsi dengan tingkat aktivitas seismik/vulkanik tinggi dan pariwisata aktif. Memerlukan mitigasi bencana mandiri tanpa merusak estetika lingkungan dengan tiang antena telekomunikasi besar.
+                                </p>
+                            </div>
+                            <span id="edit-slide11-gtm1-footer" contenteditable="true" class="text-[10px] text-zinc-500 font-mono border-t border-zinc-800/50 pt-2">Mitra Lapangan Pertama: PMI & Komunitas SAR Lokal.</span>
+                        </div>
+
+                        <!-- Pilot Project -->
+                        <div class="p-5 bg-zinc-900/50 border border-zinc-800 rounded-xl flex flex-col justify-between">
+                            <div>
+                                <h3 id="edit-slide11-gtm2-title" contenteditable="true" class="font-bold text-zinc-100 mb-3 flex items-center gap-2">
+                                    <span class="material-symbols-outlined text-amber-500">flight_takeoff</span>
+                                    2. Kampanye Grassroots
+                                </h3>
+                                <p id="edit-slide11-gtm2-desc" contenteditable="true" class="text-zinc-400 leading-relaxed mb-4">
+                                    Merilis aplikasi *Survivor* gratis di Google Play dan iOS App Store yang ditargetkan untuk pendaki gunung, komunitas pencinta alam, dan relawan bencana alam. Kampanye edukasi pembentukan mesh mandiri.
+                                </p>
+                            </div>
+                            <span id="edit-slide11-gtm2-footer" contenteditable="true" class="text-[10px] text-zinc-500 font-mono border-t border-zinc-800/50 pt-2">Prinsip: Semakin padat pengguna, mesh semakin kuat.</span>
+                        </div>
+
+                        <!-- Expansion -->
+                        <div class="p-5 bg-zinc-900/50 border border-zinc-800 rounded-xl flex flex-col justify-between">
+                            <div>
+                                <h3 id="edit-slide11-gtm3-title" contenteditable="true" class="font-bold text-zinc-100 mb-3 flex items-center gap-2">
+                                    <span class="material-symbols-outlined text-amber-500">domain_add</span>
+                                    3. Komersialisasi B2G
+                                </h3>
+                                <p id="edit-slide11-gtm3-desc" contenteditable="true" class="text-zinc-400 leading-relaxed mb-4">
+                                    Menggunakan data keberhasilan program pilot di Yogyakarta untuk masuk ke tender e-katalog LKPP tingkat nasional. Mengamankan alokasi anggaran mitigasi bencana BNPB/BASARNAS pusat.
+                                </p>
+                            </div>
+                            <span id="edit-slide11-gtm3-footer" contenteditable="true" class="text-[10px] text-zinc-500 font-mono border-t border-zinc-800/50 pt-2">Ekspansi: Integrasi dengan Sistem Peringatan Dini Nasional.</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SLIDE 15: Resku Impact 2026 -->
+                <div id="slide-14" class="slide w-full flex-col justify-center gap-6">
+                    <div class="border-b border-zinc-800 pb-4">
+                        <h2 id="edit-slide12-header" contenteditable="true" class="font-title font-bold text-3xl text-amber-500">12. Dampak Resku (Impact 2026)</h2>
+                        <p id="edit-slide12-subheader" contenteditable="true" class="text-sm text-zinc-400 mt-1">Target dampak sosial dan pertumbuhan bisnis pada akhir tahun 2026</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-2 text-xs">
+                        <!-- Social Impact -->
+                        <div class="p-5 bg-zinc-900/40 border border-zinc-800 rounded-xl flex flex-col justify-between">
+                            <div>
+                                <span class="material-symbols-outlined text-emerald-500 text-4xl mb-2">volunteer_activism</span>
+                                <h3 id="edit-slide12-soc-title" contenteditable="true" class="font-bold text-zinc-100 text-sm mb-2">Dampak Sosial & Kemanusiaan</h3>
+                                <ul id="edit-slide12-soc-list" contenteditable="true" class="text-zinc-400 space-y-2 leading-relaxed">
+                                    <li>• Menyelamatkan ratusan nyawa dalam masa kritis 72 jam pertama pasca-bencana.</li>
+                                    <li>• Mengurangi waktu pencarian tim SAR sebesar 35% menggunakan asisten cerdas Local AI DSS.</li>
+                                    <li>• Mendistribusikan informasi keselamatan resmi terenkripsi bebas hoaks ke 100.000+ perangkat mesh warga.</li>
+                                </ul>
+                            </div>
+                            <div id="edit-slide12-soc-footer" contenteditable="true" class="mt-4 pt-4 border-t border-zinc-850 text-emerald-400 font-mono font-bold text-right text-[10px]">
+                                Target 2026: Zero Communication Blackout
+                            </div>
+                        </div>
+
+                        <!-- Business Impact -->
+                        <div class="p-5 bg-zinc-900/40 border border-zinc-800 rounded-xl flex flex-col justify-between">
+                            <div>
+                                <span class="material-symbols-outlined text-amber-500 text-4xl mb-2">trending_up</span>
+                                <h3 id="edit-slide12-biz-title" contenteditable="true" class="font-bold text-zinc-100 text-sm mb-2">Dampak Bisnis & Pertumbuhan</h3>
+                                <ul id="edit-slide12-biz-list" contenteditable="true" class="text-zinc-400 space-y-2 leading-relaxed">
+                                    <li>• Mencapai Pendapatan Berulang Tahunan (ARR) sebesar USD 1,2 Juta melalui kontrak B2G & B2NGO.</li>
+                                    <li>• Menggelar 30+ jaringan komando mitigasi lokal di kabupaten/kota rawan bencana.</li>
+                                    <li>• Menjual 1.000+ unit Resku Hub Beacon untuk diintegrasikan pada infrastruktur desa tangguh bencana.</li>
+                                </ul>
+                            </div>
+                            <div id="edit-slide12-biz-footer" contenteditable="true" class="mt-4 pt-4 border-t border-zinc-850 text-amber-400 font-mono font-bold text-right text-[10px]">
+                                Profitabilitas Berkelanjutan untuk Riset Lanjutan
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SLIDE 16: Roadmap & Sustainability -->
+                <div id="slide-15" class="slide w-full flex-col justify-center gap-6">
+                    <div class="border-b border-zinc-800 pb-4">
+                        <h2 id="edit-slide13-header" contenteditable="true" class="font-title font-bold text-3xl text-amber-500">13. Roadmap & Keberlanjutan Proyek</h2>
+                        <p id="edit-slide13-subheader" contenteditable="true" class="text-sm text-zinc-400 mt-1">Rencana jangka panjang pengembangan produk dan keberlanjutan masa depan</p>
+                    </div>
+
+                    <!-- Horizontal Timeline -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-2 text-xs">
+                        <div class="relative p-5 bg-zinc-900/40 border border-zinc-800 rounded-xl">
+                            <div id="edit-slide13-fase1-badge" contenteditable="true" class="absolute -top-3 left-4 px-2 py-0.5 bg-amber-500 text-zinc-950 font-bold rounded text-[10px] font-mono">FASE 1: R&D (Q1-Q2 2026)</div>
+                            <h4 id="edit-slide13-fase1-title" contenteditable="true" class="font-bold text-zinc-200 mt-2 mb-2">Stabilisasi Protokol Mesh BLE</h4>
+                            <p id="edit-slide13-fase1-desc" contenteditable="true" class="text-zinc-400 leading-relaxed">
+                                Optimalisasi interval role-switching, penulisan library Flutter mesh, integrasi skema serialisasi Protocol Buffers (Protobuf) untuk efisiensi muatan data, serta pengujian daya tahan baterai di berbagai jenis smartphone.
+                            </p>
+                        </div>
+
+                        <div class="relative p-5 bg-zinc-900/40 border border-zinc-800 rounded-xl">
+                            <div id="edit-slide13-fase2-badge" contenteditable="true" class="absolute -top-3 left-4 px-2 py-0.5 bg-amber-500 text-zinc-950 font-bold rounded text-[10px] font-mono">FASE 2: PILOT (Q3 2026)</div>
+                            <h4 id="edit-slide13-fase2-title" contenteditable="true" class="font-bold text-zinc-200 mt-2 mb-2">Uji Coba Lapangan (Yogyakarta)</h4>
+                            <p id="edit-slide13-fase2-desc" contenteditable="true" class="text-zinc-400 leading-relaxed">
+                                Pemasangan 20 unit Resku Hub Beacon di titik evakuasi Gunung Merapi bekerjasama dengan BPBD DIY. Simulasi pencarian korban oleh relawan menggunakan drone pemindai BLE. Pengumpulan data performa transmisi.
+                            </p>
+                        </div>
+
+                        <div class="relative p-5 bg-zinc-900/40 border border-zinc-800 rounded-xl">
+                            <div id="edit-slide13-fase3-badge" contenteditable="true" class="absolute -top-3 left-4 px-2 py-0.5 bg-amber-500 text-zinc-950 font-bold rounded text-[10px] font-mono">FASE 3: SCALE (Q4 2026)</div>
+                            <h4 id="edit-slide13-fase3-title" contenteditable="true" class="font-bold text-zinc-200 mt-2 mb-2">Nasionalisasi & LKPP</h4>
+                            <p id="edit-slide13-fase3-desc" contenteditable="true" class="text-zinc-400 leading-relaxed">
+                                Pendaftaran produk di e-katalog LKPP untuk memfasilitasi pengadaan langsung oleh pemerintah daerah seluruh Indonesia. Peluncuran integrasi dashboard dengan server AISBASARNAS nasional.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div id="edit-slide13-sus-box" contenteditable="true" class="p-4 bg-zinc-950 border border-zinc-800 rounded-xl text-xs text-zinc-400 leading-relaxed">
+                        <strong>Keberlanjutan (Sustainability):</strong> Pendanaan komersial B2G dan B2NGO mensubsidi silang pengembangan aplikasi survivor yang akan tetap berstatus gratis dan open-source guna mendukung adopsi massal yang menunjang kepadatan mesh jaringan.
+                    </div>
+                </div>
+
+                <!-- SLIDE 17: Exit Strategy -->
+                <div id="slide-16" class="slide w-full flex-col justify-center gap-6">
+                    <div class="border-b border-zinc-800 pb-4">
+                        <h2 id="edit-slide14-header" contenteditable="true" class="font-title font-bold text-3xl text-amber-500">14. Strategi Keluar (Exit Strategy)</h2>
+                        <p id="edit-slide14-subheader" contenteditable="true" class="text-sm text-zinc-400 mt-1">Bagaimana para pendiri dan investor merealisasikan nilai ekonomi jangka panjang?</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-2 text-xs">
+                        <!-- Option 1 -->
+                        <div class="p-5 bg-zinc-900/40 border border-zinc-800 rounded-xl flex flex-col justify-between">
+                            <div>
+                                <span class="material-symbols-outlined text-amber-500 text-3xl mb-2">handshake</span>
+                                <h4 id="edit-slide14-opt1-title" contenteditable="true" class="font-bold text-zinc-200 mb-2">1. Akuisisi Strategis</h4>
+                                <p id="edit-slide14-opt1-desc" contenteditable="true" class="text-zinc-400 leading-relaxed">
+                                    Diakuisisi oleh raksasa penyedia perangkat komunikasi satelit atau telekomunikasi nasional (misalnya Garmin, Telkomsel, Starlink). Mereka membutuhkan protokol mesh BLE tangguh untuk melengkapi titik buta satelit di dalam ruangan.
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Option 2 -->
+                        <div class="p-5 bg-zinc-900/40 border border-zinc-800 rounded-xl flex flex-col justify-between">
+                            <div>
+                                <span class="material-symbols-outlined text-amber-500 text-3xl mb-2">shield</span>
+                                <h4 id="edit-slide14-opt2-title" contenteditable="true" class="font-bold text-zinc-200 mb-2">2. Badan BUMN Keamanan</h4>
+                                <p id="edit-slide14-opt2-desc" contenteditable="true" class="text-zinc-400 leading-relaxed">
+                                    Spin-off menjadi badan independen atau penyedia teknologi berdaulat di bawah naungan BUMN Telekomunikasi/Pertahanan (misal PT Len Industri). Hal ini menargetkan pemeliharaan jangka panjang oleh negara untuk infrastruktur keamanan kritis.
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Option 3 -->
+                        <div class="p-5 bg-zinc-900/40 border border-zinc-800 rounded-xl flex flex-col justify-between">
+                            <div>
+                                <span class="material-symbols-outlined text-amber-500 text-3xl mb-2">rocket_launch</span>
+                                <h4 id="edit-slide14-opt3-title" contenteditable="true" class="font-bold text-zinc-200 mb-2">3. B2B Industrial Pivot</h4>
+                                <p id="edit-slide14-opt3-desc" contenteditable="true" class="text-zinc-400 leading-relaxed">
+                                    Lisensi lisensi software mesh dikembangkan ke pasar komersial B2B pertambangan bawah tanah, kilang minyak lepas pantai, atau industri perhutanan terpencil yang membutuhkan sistem keselamatan pekerja tanpa infrastruktur internet.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- Slide Footer Controls -->
+        <footer class="h-16 border-t border-zinc-900/50 px-8 flex items-center justify-between bg-zinc-950/40">
+            <button id="prev-btn" class="px-4 py-2 bg-zinc-900 hover:bg-zinc-800 text-zinc-300 text-xs font-semibold rounded-lg border border-zinc-800 flex items-center gap-1.5 transition-colors">
+                <span class="material-symbols-outlined text-sm">arrow_back</span> Kembali
+            </button>
+            <div id="slide-indicators" class="flex gap-1">
+                <!-- Dynamically generated dot indicators will appear here -->
+            </div>
+            <button id="next-btn" class="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-zinc-950 text-xs font-bold rounded-lg flex items-center gap-1.5 transition-colors">
+                Lanjut <span class="material-symbols-outlined text-sm">arrow_forward</span>
+            </button>
+        </footer>
+    </main>
+
+    <!-- Slide Data and Navigation script -->
+    <script>
+        const slideTopics = [
+            "Cover",
+            "Market Fit",
+            "User Experience",
+            "Empty Map View",
+            "Tech & Novelty",
+            "Competitors & UVP",
+            "Value Prop Canvas",
+            "Market Size",
+            "Business Model Canvas",
+            "Business Model",
+            "Finance B2G",
+            "Finance B2G (Jakarta)",
+            "Finance B2NGO",
+            "GTM Strategy",
+            "Social & Biz Impact",
+            "Roadmap",
+            "Exit Strategy"
+        ];
+
+        let currentSlide = 0;
+        const totalSlides = 17;
+
+        const sidebarNavList = document.getElementById("sidebar-nav-list");
+        const slideIndicators = document.getElementById("slide-indicators");
+        const slideTopicBadge = document.getElementById("slide-topic-badge");
+        const slideCounter = document.getElementById("slide-index-counter");
+        const progressBar = document.getElementById("progress-bar");
+        const saveStatus = document.getElementById("save-status");
+
+        // Generate Sidebar List and Dot Indicators
+        for (let i = 0; i < totalSlides; i++) {
+            // Sidebar List Item
+            const li = document.createElement("li");
+            li.id = `nav-item-${i}`;
+            li.className = `flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all duration-200 hover:bg-zinc-900/60 ${i === 0 ? 'bg-amber-500/10 border border-amber-500/20 text-amber-500 font-semibold' : 'text-zinc-400 border border-transparent'}`;
+            li.innerHTML = `
+                <span class="w-5 h-5 flex items-center justify-center rounded-full bg-zinc-900 font-mono text-[9px] border border-zinc-800 text-zinc-500">${i + 1}</span>
+                <span class="truncate">${slideTopics[i]}</span>
+            `;
+            li.addEventListener("click", () => goToSlide(i));
+            sidebarNavList.appendChild(li);
+
+            // Dot Indicator
+            const dot = document.createElement("div");
+            dot.id = `dot-${i}`;
+            dot.className = `w-2 h-2 rounded-full cursor-pointer transition-all duration-300 ${i === 0 ? 'bg-amber-500 w-4' : 'bg-zinc-800'}`;
+            dot.addEventListener("click", () => goToSlide(i));
+            slideIndicators.appendChild(dot);
+        }
+
+        // Fixed display bug: completely hide deactivated slides via class toggling
+        function goToSlide(index) {
+            if (index < 0 || index >= totalSlides) return;
+
+            // Deactivate previous slide
+            document.getElementById(`slide-${currentSlide}`).classList.remove("active");
+            document.getElementById(`nav-item-${currentSlide}`).className = "flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all duration-200 hover:bg-zinc-900/60 text-zinc-400 border border-transparent";
+            document.getElementById(`dot-${currentSlide}`).className = "w-2 h-2 rounded-full cursor-pointer bg-zinc-800 transition-all duration-300";
+
+            // Update current slide index
+            currentSlide = index;
+
+            // Activate new slide
+            document.getElementById(`slide-${currentSlide}`).classList.add("active");
+            document.getElementById(`nav-item-${currentSlide}`).className = "flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all duration-200 bg-amber-500/10 border border-amber-500/20 text-amber-500 font-semibold shadow-inner";
+            document.getElementById(`dot-${currentSlide}`).className = "w-2 h-2 rounded-full cursor-pointer bg-amber-500 w-4 transition-all duration-300";
+
+            // Update counters and header info
+            slideTopicBadge.innerText = slideTopics[currentSlide];
+            slideCounter.innerText = `Slide ${currentSlide + 1} dari ${totalSlides}`;
+            progressBar.style.width = `${((currentSlide + 1) / totalSlides) * 100}%`;
+
+            // Scroll sidebar selected item into view smoothly
+            document.getElementById(`nav-item-${currentSlide}`).scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        // Auto-save edited data to localStorage
+        const editableElements = document.querySelectorAll('[contenteditable="true"]');
+        
+        // Load data on start
+        function loadSavedData() {
+            editableElements.forEach(el => {
+                const savedValue = localStorage.getItem(`resku_deck_${el.id}`);
+                if (savedValue !== null) {
+                    el.innerHTML = savedValue;
+                }
+            });
+            // Special handling for the BMC whole grid text block
+            const bmcVal = localStorage.getItem('resku_deck_bmc_grid_editable');
+            if (bmcVal !== null) {
+                document.getElementById('bmc-grid-editable').innerHTML = bmcVal;
+            }
+        }
+
+        // Save data listener
+        function saveData() {
+            saveStatus.innerHTML = `<span class="h-1.5 w-1.5 bg-amber-500 rounded-full animate-ping"></span> Menyimpan...`;
+            saveStatus.classList.remove("text-emerald-500");
+            saveStatus.classList.add("text-amber-500");
+
+            editableElements.forEach(el => {
+                localStorage.setItem(`resku_deck_${el.id}`, el.innerHTML);
+            });
+
+            setTimeout(() => {
+                saveStatus.innerHTML = `<span class="h-1.5 w-1.5 bg-emerald-500 rounded-full"></span> Tersimpan`;
+                saveStatus.classList.remove("text-amber-500");
+                saveStatus.classList.add("text-emerald-500");
+            }, 500);
+        }
+
+        // Attach listeners to all editables
+        editableElements.forEach(el => {
+            el.addEventListener('input', saveData);
+        });
+
+        // Reset Template functionality
+        document.getElementById("reset-data-btn").addEventListener("click", () => {
+            if (confirm("Apakah Anda yakin ingin menghapus semua edit data Anda dan mengembalikan ke template dasar?")) {
+                editableElements.forEach(el => {
+                    localStorage.removeItem(`resku_deck_${el.id}`);
+                });
+                localStorage.removeItem('resku_deck_bmc_grid_editable');
+                location.reload();
+            }
+        });
+
+        // Export data as HTML source code
+        document.getElementById("export-data-btn").addEventListener("click", () => {
+            const rawHtml = document.documentElement.outerHTML;
+            const blob = new Blob([rawHtml], { type: 'text/html' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'resku_presentation_edited.html';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        });
+
+        // Navigation Button listeners
+        document.getElementById("prev-btn").addEventListener("click", () => goToSlide(currentSlide - 1));
+        document.getElementById("next-btn").addEventListener("click", () => goToSlide(currentSlide + 1));
+
+        // Keyboard navigation
+        document.addEventListener("keydown", (e) => {
+            if (e.key === "ArrowRight" || e.key === " ") {
+                goToSlide(currentSlide + 1);
+            } else if (e.key === "ArrowLeft" || e.key === "Backspace") {
+                goToSlide(currentSlide - 1);
+            }
+        });
+
+        // Initialize saved data
+        loadSavedData();
+    </script>
+</body>
+</html>
