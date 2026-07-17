@@ -71,6 +71,9 @@ graph TD
     D <-->|BLE Mesh Protocol| G
 ```
 
+### System Architecture Diagram
+![Resku System Architecture](assets/system_architecture.png)
+
 ---
 
 ## ✨ Core Features
@@ -199,6 +202,12 @@ Resku stores mesh states inside Hive boxes:
 
 ---
 
+## 💼 Business & Sustainability Blueprint
+
+![Resku Business Blueprint](assets/business_blueprint.png)
+
+---
+
 ## 🚀 Getting Started
 
 ### Prerequisites
@@ -239,3 +248,9 @@ Resku supports multiple entry points for testing and production deployments:
 
 *   **Battery Conservation**: Continuous scanning drains batteries rapidly. Resku continuously listens to battery level changes (`battery_plus`) and automatically switches scanning intervals to minimize power consumption when battery status drops below 20%.
 *   **Auto-Pruning Service**: To prevent the Hive database from growing indefinitely on active nodes, an automated cleanup cycle runs on database initializations, pruning records older than **72 hours** (3 days).
+
+---
+
+## 👥 Meet the Team
+
+![Resku Team](assets/team_presentation.png)
