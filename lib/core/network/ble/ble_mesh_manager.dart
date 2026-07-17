@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math' as math;
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
+import 'web_mesh_stub.dart' if (dart.library.html) 'web_mesh_web.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart' as fbp;
 import 'package:ble_peripheral/ble_peripheral.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -39,6 +40,11 @@ class BleMeshManager {
 
   VoidCallback? onDataSynced;
   final Battery _battery = Battery();
+
+  WebMeshChannel? _webChannel;
+  Timer? _webPingTimer;
+  final Map<String, Uint8List> _readCache = {};
+  Map<String, dynamic>? _pendingDeltaToSend;
 
   MeshState get state => stateNotifier.value;
 
@@ -96,6 +102,11 @@ class BleMeshManager {
     // Trigger runtime permissions prompt
     await requestBlePermissions();
     
+    if (kIsWeb) {
+      _webChannel = getWebMeshChannel();
+      _webChannel!.init(_handleWebMessage);
+    }
+    
     await _updateOtherDevicesCount();
     _runCycle();
   }
@@ -104,11 +115,17 @@ class BleMeshManager {
   Future<void> stopMeshCycle() async {
     _isMeshRunning = false;
     _cycleTimer?.cancel();
+    _webPingTimer?.cancel();
     _countdownTimer?.cancel();
     stateNotifier.value = MeshState.idle;
     cooldownSecondsNotifier.value = 0;
 
-    await _stopRealBle();
+    if (kIsWeb) {
+      _webChannel?.dispose();
+      _webChannel = null;
+    } else {
+      await _stopRealBle();
+    }
     debugPrint('Mesh: Resku BLE Mesh stopped.');
   }
 
@@ -151,9 +168,33 @@ class BleMeshManager {
       stateNotifier.value = MeshState.broadcasting;
       debugPrint('Mesh State: Broadcasting (Advertising).');
 
-      final bool advertiseSuccess = await _startRealAdvertising();
-      if (!advertiseSuccess) {
-        debugPrint('Mesh Warning: Real Advertising failed to start.');
+      if (kIsWeb) {
+        final myId = LocalDB().getOrCreateDeviceUUIDSync(isRescuer: _isRescuer);
+        // Send initial ping
+        _webChannel?.sendMessage({
+          'type': 'ping',
+          'senderId': myId,
+          'isRescuer': _isRescuer,
+        });
+
+        // Setup a periodic timer for sending pings
+        _webPingTimer?.cancel();
+        _webPingTimer = Timer.periodic(const Duration(seconds: 2), (timer) {
+          if (!_isMeshRunning || stateNotifier.value != MeshState.broadcasting) {
+            timer.cancel();
+            return;
+          }
+          _webChannel?.sendMessage({
+            'type': 'ping',
+            'senderId': myId,
+            'isRescuer': _isRescuer,
+          });
+        });
+      } else {
+        final bool advertiseSuccess = await _startRealAdvertising();
+        if (!advertiseSuccess) {
+          debugPrint('Mesh Warning: Real Advertising failed to start.');
+        }
       }
 
       final baseMs = intervals['advertiseMs']!;
@@ -161,16 +202,21 @@ class BleMeshManager {
 
       // Wait for advertising period to end, then switch role
       _cycleTimer = Timer(Duration(milliseconds: durationMs), () async {
-        await _stopRealAdvertising();
+        _webPingTimer?.cancel();
+        if (!kIsWeb) {
+          await _stopRealAdvertising();
+        }
         _toggleRole(isBroadcasting: false);
       });
     } else {
       stateNotifier.value = MeshState.receiving;
       debugPrint('Mesh State: Receiving (Scanning).');
 
-      final bool scanSuccess = await _startRealScanning();
-      if (!scanSuccess) {
-        debugPrint('Mesh Warning: Real Scanning failed to start.');
+      if (!kIsWeb) {
+        final bool scanSuccess = await _startRealScanning();
+        if (!scanSuccess) {
+          debugPrint('Mesh Warning: Real Scanning failed to start.');
+        }
       }
 
       final baseMs = intervals['scanMs']!;
@@ -178,7 +224,9 @@ class BleMeshManager {
 
       // Wait for scanning period to end, then switch role
       _cycleTimer = Timer(Duration(milliseconds: durationMs), () async {
-        await _stopRealScanning();
+        if (!kIsWeb) {
+          await _stopRealScanning();
+        }
         _toggleRole(isBroadcasting: true);
       });
     }
@@ -254,7 +302,8 @@ class BleMeshManager {
 
       await BlePeripheral.addService(service);
 
-      Map<String, dynamic>? pendingDeltaToSend;
+      _readCache.clear();
+      _pendingDeltaToSend = null;
 
       // Set write callback so that when the scanning device writes to our characteristic, we receive their records and LUV.
       BlePeripheral.setWriteRequestCallback((deviceId, characteristicId, offset, value) {
@@ -328,7 +377,7 @@ class BleMeshManager {
               }
             }
 
-            pendingDeltaToSend = {
+            _pendingDeltaToSend = {
               'survivors': deltaSurvivors,
               'messages': deltaMessages,
               'links': deltaLinks,
@@ -348,34 +397,42 @@ class BleMeshManager {
 
       // Set read callback so that when the scanning device reads our characteristic, we return our LUV or compiled delta.
       BlePeripheral.setReadRequestCallback((deviceId, characteristicId, offset, value) {
-        debugPrint('Mesh Real BLE GATT: Received read request from $deviceId on characteristic $characteristicId');
+        debugPrint('Mesh Real BLE GATT: Received read request from $deviceId on characteristic $characteristicId, offset: $offset');
         try {
-          String payloadString;
-          if (pendingDeltaToSend == null) {
-            // Step 1: Return our local LUV catalog
-            final freshLocalSurvivors = LocalDB().getAllSurvivorsSync();
-            final freshLocalMessages = LocalDB().getAllRescuerMessagesSync();
-            final freshLocalLinks = LocalDB().getAllNetworkLinksSync();
+          Uint8List bytes;
+          if (offset == 0) {
+            String payloadString;
+            if (_pendingDeltaToSend == null) {
+              // Step 1: Return our local LUV catalog
+              final freshLocalSurvivors = LocalDB().getAllSurvivorsSync();
+              final freshLocalMessages = LocalDB().getAllRescuerMessagesSync();
+              final freshLocalLinks = LocalDB().getAllNetworkLinksSync();
 
-            final catalog = {
-              'senderId': myId,
-              'survivors': {for (var s in freshLocalSurvivors) s.id: s.sequenceNumber},
-              'messages': {for (var m in freshLocalMessages) m.id: m.timestamp},
-              'links': {for (var l in freshLocalLinks) l.key: l.timestamp}
-            };
-            payloadString = jsonEncode(catalog);
-            debugPrint('Mesh Real BLE GATT: Sending LUV catalog to client: $payloadString');
+              final catalog = {
+                'senderId': myId,
+                'survivors': {for (var s in freshLocalSurvivors) s.id: s.sequenceNumber},
+                'messages': {for (var m in freshLocalMessages) m.id: m.timestamp},
+                'links': {for (var l in freshLocalLinks) l.key: l.timestamp}
+              };
+              payloadString = jsonEncode(catalog);
+              debugPrint('Mesh Real BLE GATT: Sending LUV catalog to client.');
+            } else {
+              // Step 3: Return delta records compiled during Step 2
+              payloadString = jsonEncode(_pendingDeltaToSend);
+              debugPrint('Mesh Real BLE GATT: Sending delta records to client.');
+              _pendingDeltaToSend = null; // Clear for next connections
+            }
+            bytes = Uint8List.fromList(utf8.encode(payloadString));
+            _readCache[deviceId] = bytes;
           } else {
-            // Step 3: Return delta records compiled during Step 2
-            payloadString = jsonEncode(pendingDeltaToSend);
-            debugPrint('Mesh Real BLE GATT: Sending delta records to client.');
-            pendingDeltaToSend = null; // Clear for next connections
+            bytes = _readCache[deviceId] ?? Uint8List(0);
           }
 
-          final bytes = Uint8List.fromList(utf8.encode(payloadString));
           Uint8List responseBytes = bytes;
-          if (offset > 0 && offset < bytes.length) {
+          if (offset < bytes.length) {
             responseBytes = Uint8List.fromList(bytes.sublist(offset));
+          } else {
+            responseBytes = Uint8List(0);
           }
           
           return ReadRequestResult(
@@ -456,7 +513,6 @@ class BleMeshManager {
       });
 
       await fbp.FlutterBluePlus.startScan(
-        withServices: [fbp.Guid(serviceUuid)],
         timeout: const Duration(seconds: 4),
       );
 
@@ -594,7 +650,7 @@ class BleMeshManager {
 
         // Write our LUV + Delta records to the peer
         debugPrint('Mesh Real BLE DTN: Writing local LUV and delta records (${deltaSurvivors.length} survivors, ${deltaMessages.length} messages, ${deltaLinks.length} links) to peer...');
-        await syncChar.write(Uint8List.fromList(utf8.encode(writePayload)));
+        await syncChar.write(Uint8List.fromList(utf8.encode(writePayload)), allowLongWrite: true);
 
         // 3. Read Peer's delta records back (Step 3)
         stateNotifier.value = MeshState.receiving;
@@ -658,6 +714,254 @@ class BleMeshManager {
   Future<void> _stopRealBle() async {
     await _stopRealAdvertising();
     await _stopRealScanning();
+  }
+
+  Future<void> _connectAndSyncWeb(String peerId) async {
+    _cycleTimer?.cancel();
+    _webPingTimer?.cancel();
+    stateNotifier.value = MeshState.connected;
+    debugPrint('Mesh Web Simulation: Connecting to peer $peerId...');
+
+    final myId = LocalDB().getOrCreateDeviceUUIDSync(isRescuer: _isRescuer);
+
+    // Send handshake request to start the sync process
+    _webChannel?.sendMessage({
+      'type': 'handshake_request',
+      'senderId': myId,
+      'targetId': peerId,
+    });
+  }
+
+  void _handleWebMessage(Map<String, dynamic> payload) async {
+    if (!_isMeshRunning) return;
+
+    final String type = payload['type'] as String? ?? '';
+    final String senderId = payload['senderId'] as String? ?? '';
+    final String targetId = payload['targetId'] as String? ?? '';
+
+    // Get our own ID
+    final myId = LocalDB().getOrCreateDeviceUUIDSync(isRescuer: _isRescuer);
+
+    // Ignore self-messages
+    if (senderId == myId) return;
+
+    switch (type) {
+      case 'ping':
+        // If we are currently scanning/receiving, we can respond
+        if (state == MeshState.receiving) {
+          final bool peerIsRescuer = payload['isRescuer'] as bool? ?? false;
+          // Constraint: Rescuer to Rescuer connection is not possible
+          if (_isRescuer && peerIsRescuer) {
+            debugPrint('Mesh Web Simulation: Ignoring peer rescuer device: $senderId');
+            return;
+          }
+
+          debugPrint('Mesh Web Simulation: Discovered peer: $senderId. Initiating handshake...');
+          await _connectAndSyncWeb(senderId);
+        }
+        break;
+
+      case 'handshake_request':
+        // Only respond if we are the target and we are broadcasting
+        if (targetId == myId && state == MeshState.broadcasting) {
+          debugPrint('Mesh Web Simulation: Received handshake request from $senderId. Sending LUV catalog.');
+          
+          final freshLocalSurvivors = LocalDB().getAllSurvivorsSync();
+          final freshLocalMessages = LocalDB().getAllRescuerMessagesSync();
+          final freshLocalLinks = LocalDB().getAllNetworkLinksSync();
+
+          final catalog = {
+            'senderId': myId,
+            'survivors': {for (var s in freshLocalSurvivors) s.id: s.sequenceNumber},
+            'messages': {for (var m in freshLocalMessages) m.id: m.timestamp},
+            'links': {for (var l in freshLocalLinks) l.key: l.timestamp}
+          };
+
+          _webChannel?.sendMessage({
+            'type': 'handshake_response',
+            'senderId': myId,
+            'targetId': senderId,
+            'luv': catalog,
+          });
+        }
+        break;
+
+      case 'handshake_response':
+        // Only process if we are the target and in connected state (meaning we initiated the sync)
+        if (targetId == myId && state == MeshState.connected) {
+          debugPrint('Mesh Web Simulation: Received handshake response from $senderId. Comparing LUVs.');
+          
+          final peerLuv = payload['luv'] as Map<String, dynamic>? ?? {};
+          final peerLuvSurvivors = Map<String, dynamic>.from(peerLuv['survivors'] ?? {});
+          final peerLuvMessages = Map<String, dynamic>.from(peerLuv['messages'] ?? {});
+          final peerLuvLinks = Map<String, dynamic>.from(peerLuv['links'] ?? {});
+
+          // Save direct network link
+          LocalDB().saveNetworkLinkSync(NetworkLink(
+            sourceId: myId,
+            targetId: senderId,
+            timestamp: DateTime.now().millisecondsSinceEpoch,
+          ));
+
+          final localSurvivors = LocalDB().getAllSurvivorsSync();
+          final localMessages = LocalDB().getAllRescuerMessagesSync();
+          final localLinks = LocalDB().getAllNetworkLinksSync();
+
+          final localLuvSurvivors = {for (var s in localSurvivors) s.id: s.sequenceNumber};
+          final localLuvMessages = {for (var m in localMessages) m.id: m.timestamp};
+          final localLuvLinks = {for (var l in localLinks) l.key: l.timestamp};
+
+          final List<Map<String, dynamic>> deltaSurvivors = [];
+          for (var local in localSurvivors) {
+            final peerSeq = peerLuvSurvivors[local.id] as int? ?? -1;
+            if (local.sequenceNumber > peerSeq) {
+              deltaSurvivors.add(local.toMap());
+            }
+          }
+
+          final List<Map<String, dynamic>> deltaMessages = [];
+          for (var local in localMessages) {
+            if (!peerLuvMessages.containsKey(local.id)) {
+              deltaMessages.add(local.toMap());
+            }
+          }
+
+          final List<Map<String, dynamic>> deltaLinks = [];
+          for (var local in localLinks) {
+            final peerTime = peerLuvLinks[local.key] as int? ?? -1;
+            if (local.timestamp > peerTime) {
+              deltaLinks.add(local.toMap());
+            }
+          }
+
+          _webChannel?.sendMessage({
+            'type': 'delta_send',
+            'senderId': myId,
+            'targetId': senderId,
+            'luv': {
+              'survivors': localLuvSurvivors,
+              'messages': localLuvMessages,
+              'links': localLuvLinks,
+            },
+            'delta': {
+              'survivors': deltaSurvivors,
+              'messages': deltaMessages,
+              'links': deltaLinks,
+            },
+          });
+        }
+        break;
+
+      case 'delta_send':
+        // Only process if we are the target and we are broadcasting
+        if (targetId == myId && state == MeshState.broadcasting) {
+          debugPrint('Mesh Web Simulation: Received delta from $senderId. Saving records and responding.');
+
+          // Save direct link
+          LocalDB().saveNetworkLinkSync(NetworkLink(
+            sourceId: myId,
+            targetId: senderId,
+            timestamp: DateTime.now().millisecondsSinceEpoch,
+          ));
+
+          final clientDelta = payload['delta'] as Map<String, dynamic>? ?? {};
+          final clientDeltaSurvivors = clientDelta['survivors'] as List<dynamic>? ?? [];
+          for (var item in clientDeltaSurvivors) {
+            LocalDB().saveSurvivorRecordSync(SurvivorRecord.fromMap(Map<String, dynamic>.from(item)));
+          }
+          final clientDeltaMessages = clientDelta['messages'] as List<dynamic>? ?? [];
+          for (var item in clientDeltaMessages) {
+            LocalDB().saveRescuerMessageSync(RescuerMessage.fromMap(Map<String, dynamic>.from(item)));
+          }
+          final clientDeltaLinks = clientDelta['links'] as List<dynamic>? ?? [];
+          for (var item in clientDeltaLinks) {
+            LocalDB().saveNetworkLinkSync(NetworkLink.fromMap(Map<String, dynamic>.from(item)));
+          }
+
+          // Compile delta to send back
+          final clientLuv = payload['luv'] as Map<String, dynamic>? ?? {};
+          final clientLuvSurvivors = Map<String, dynamic>.from(clientLuv['survivors'] ?? {});
+          final clientLuvMessages = Map<String, dynamic>.from(clientLuv['messages'] ?? {});
+          final clientLuvLinks = Map<String, dynamic>.from(clientLuv['links'] ?? {});
+
+          final freshLocalSurvivors = LocalDB().getAllSurvivorsSync();
+          final freshLocalMessages = LocalDB().getAllRescuerMessagesSync();
+          final freshLocalLinks = LocalDB().getAllNetworkLinksSync();
+
+          final List<Map<String, dynamic>> responseSurvivors = [];
+          for (var local in freshLocalSurvivors) {
+            final clientSeq = clientLuvSurvivors[local.id] as int? ?? -1;
+            if (local.sequenceNumber > clientSeq) {
+              responseSurvivors.add(local.toMap());
+            }
+          }
+
+          final List<Map<String, dynamic>> responseMessages = [];
+          for (var local in freshLocalMessages) {
+            if (!clientLuvMessages.containsKey(local.id)) {
+              responseMessages.add(local.toMap());
+            }
+          }
+
+          final List<Map<String, dynamic>> responseLinks = [];
+          for (var local in freshLocalLinks) {
+            final clientTime = clientLuvLinks[local.key] as int? ?? -1;
+            if (local.timestamp > clientTime) {
+              responseLinks.add(local.toMap());
+            }
+          }
+
+          _webChannel?.sendMessage({
+            'type': 'delta_response',
+            'senderId': myId,
+            'targetId': senderId,
+            'delta': {
+              'survivors': responseSurvivors,
+              'messages': responseMessages,
+              'links': responseLinks,
+            },
+          });
+
+          await _updateOtherDevicesCount();
+          if (onDataSynced != null) {
+            onDataSynced!();
+          }
+        }
+        break;
+
+      case 'delta_response':
+        // Only process if we are the target and in connected state (waiting for response)
+        if (targetId == myId && state == MeshState.connected) {
+          debugPrint('Mesh Web Simulation: Received delta response from $senderId. Saving records and completing sync.');
+
+          final peerDelta = payload['delta'] as Map<String, dynamic>? ?? {};
+          final peerDeltaSurvivors = peerDelta['survivors'] as List<dynamic>? ?? [];
+          for (var item in peerDeltaSurvivors) {
+            LocalDB().saveSurvivorRecordSync(SurvivorRecord.fromMap(Map<String, dynamic>.from(item)));
+          }
+          final peerDeltaMessages = peerDelta['messages'] as List<dynamic>? ?? [];
+          for (var item in peerDeltaMessages) {
+            LocalDB().saveRescuerMessageSync(RescuerMessage.fromMap(Map<String, dynamic>.from(item)));
+          }
+          final peerDeltaLinks = peerDelta['links'] as List<dynamic>? ?? [];
+          for (var item in peerDeltaLinks) {
+            LocalDB().saveNetworkLinkSync(NetworkLink.fromMap(Map<String, dynamic>.from(item)));
+          }
+
+          await _updateOtherDevicesCount();
+          stateNotifier.value = MeshState.success;
+          if (onDataSynced != null) {
+            onDataSynced!();
+          }
+
+          // Delay starting cooldown so user can see "Sync Success"
+          _cycleTimer?.cancel();
+          Future.delayed(const Duration(seconds: 2), () {
+            _startCooldown();
+          });
+        }
+        break;
+    }
   }
 }
 

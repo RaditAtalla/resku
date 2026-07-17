@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:hive/hive.dart';
 import '../../../core/database/local_db.dart';
 import '../../../core/models/survivor_record.dart';
 import '../../../core/models/rescuer_message.dart';
@@ -66,6 +67,125 @@ class _RescuerDashboardScreenState extends State<RescuerDashboardScreen> {
     _toastTimer?.cancel();
     _clockTimer?.cancel();
     super.dispose();
+  }
+
+  void _seedShowcaseData() async {
+    final db = LocalDB();
+    await db.init();
+    
+    // Clear all entries
+    final survivorsBox = Hive.box('survivor_records_box');
+    final linksBox = Hive.box('network_links_box');
+    
+    await survivorsBox.clear();
+    await linksBox.clear();
+    
+    // Create seed records
+    final seedSurvivors = [
+      SurvivorRecord(
+        id: 'survivor_alice',
+        name: 'Alice Cooper',
+        latitude: -6.2120,
+        longitude: 106.8480,
+        status: SurvivorStatus.injured,
+        needs: 'First Aid / Medical',
+        timestamp: DateTime.now().millisecondsSinceEpoch,
+        sequenceNumber: 1,
+        batteryPercentage: 78,
+        message: 'My leg is broken and I cannot walk. We are hiding in the lobby of the office building. Need medical help and bandages.',
+      ),
+      SurvivorRecord(
+        id: 'survivor_bob',
+        name: 'Bob Marley',
+        latitude: -6.2110,
+        longitude: 106.8490,
+        status: SurvivorStatus.critical,
+        needs: 'Tools / Warmth, First Aid / Medical',
+        timestamp: DateTime.now().millisecondsSinceEpoch,
+        sequenceNumber: 1,
+        batteryPercentage: 92,
+        message: 'URGENT! A concrete slab collapsed. My friend is trapped under debris and breathing is shallow. We need rescue tools and heavy lifters immediately!',
+      ),
+      SurvivorRecord(
+        id: 'survivor_charlie',
+        name: 'Charlie Brown',
+        latitude: -6.2100,
+        longitude: 106.8500,
+        status: SurvivorStatus.injured,
+        needs: 'Food & Water, Shelter',
+        timestamp: DateTime.now().millisecondsSinceEpoch,
+        sequenceNumber: 1,
+        batteryPercentage: 45,
+        message: 'We are group of 5 people. Low on water and baby formula. Shelter roof collapsed. No major injuries but need water.',
+      ),
+      SurvivorRecord(
+        id: 'survivor_david',
+        name: 'David Beckham',
+        latitude: -6.2090,
+        longitude: 106.8510,
+        status: SurvivorStatus.safe,
+        needs: 'Food & Water',
+        timestamp: DateTime.now().millisecondsSinceEpoch,
+        sequenceNumber: 1,
+        batteryPercentage: 23,
+        message: 'Safe here on the roof, but looking for updates on evacuation. Phone battery is low.',
+      ),
+      SurvivorRecord(
+        id: 'survivor_emma',
+        name: 'Emma Watson',
+        latitude: -6.2200,
+        longitude: 106.8400,
+        status: SurvivorStatus.injured,
+        needs: 'Food & Water, First Aid / Medical',
+        timestamp: DateTime.now().millisecondsSinceEpoch,
+        sequenceNumber: 1,
+        batteryPercentage: 88,
+        message: 'Safe from flooding on 2nd floor, but diabetic patient needs insulin refill. Running out of drinking water.',
+      ),
+      SurvivorRecord(
+        id: 'survivor_frank',
+        name: 'Frank Sinatra',
+        latitude: -6.2210,
+        longitude: 106.8410,
+        status: SurvivorStatus.safe,
+        needs: 'Food & Water',
+        timestamp: DateTime.now().millisecondsSinceEpoch,
+        sequenceNumber: 1,
+        batteryPercentage: 62,
+        message: 'No injuries here, just staying warm. Food supplies are okay for 24 hours.',
+      ),
+      SurvivorRecord(
+        id: 'survivor_grace',
+        name: 'Grace Kelly',
+        latitude: -6.2190,
+        longitude: 106.8390,
+        status: SurvivorStatus.injured,
+        needs: 'First Aid / Medical',
+        timestamp: DateTime.now().millisecondsSinceEpoch,
+        sequenceNumber: 1,
+        batteryPercentage: 54,
+        message: 'Need basic first aid kit. Cut my hand on broken glass. Still bleeding slightly.',
+      ),
+    ];
+
+    final seedLinks = [
+      NetworkLink(sourceId: 'survivor_alice', targetId: 'survivor_bob', timestamp: DateTime.now().millisecondsSinceEpoch),
+      NetworkLink(sourceId: 'survivor_bob', targetId: 'survivor_charlie', timestamp: DateTime.now().millisecondsSinceEpoch),
+      NetworkLink(sourceId: 'survivor_charlie', targetId: 'survivor_david', timestamp: DateTime.now().millisecondsSinceEpoch),
+      NetworkLink(sourceId: 'survivor_emma', targetId: 'survivor_frank', timestamp: DateTime.now().millisecondsSinceEpoch),
+      NetworkLink(sourceId: 'survivor_emma', targetId: 'survivor_grace', timestamp: DateTime.now().millisecondsSinceEpoch),
+    ];
+
+    for (var s in seedSurvivors) {
+      await db.saveSurvivorRecord(s);
+    }
+    for (var l in seedLinks) {
+      await db.saveNetworkLink(l);
+    }
+
+    // Reload state
+    await _loadSurvivorsFromDb();
+    triggerToast('Showcase dummy data seeded successfully!', Icons.playlist_add_check);
   }
 
   Future<void> _loadSurvivorsFromDb() async {
@@ -657,6 +777,18 @@ class _RescuerDashboardScreenState extends State<RescuerDashboardScreen> {
           ],
         ),
         actions: [
+          // Seed Showcase Data Button
+          Padding(
+            padding: const EdgeInsets.only(right: 8.0),
+            child: Center(
+              child: ReskuButton.outlined(
+                label: 'SEED DATA',
+                icon: Icons.playlist_add,
+                height: 28,
+                onPressed: _seedShowcaseData,
+              ),
+            ),
+          ),
           // Mule Sync Action Button
           Padding(
             padding: const EdgeInsets.only(right: 8.0),
