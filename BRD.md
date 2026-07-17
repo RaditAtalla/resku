@@ -174,7 +174,7 @@ Berikut adalah perbandingan posisi strategis Resku terhadap alternatif solusi ko
 ### 8.2. Dampak Target Akhir 2026 (Impact 2026)
 
 - **Sosial**: Target penyebaran 100.000+ aplikasi survivor terpasang di wilayah rentan cincin api. Mengurangi rata-rata waktu respons pencarian korban kritis hingga **35%**.
-- **Bisnis**: Mencapai Pendapatan Berulang Tahunan (ARR) sebesar **USD 1.2 Juta (Rp 18.5 Miliar)** dengan penyebaran 30+ titik Command Center BPBD Daerah.
+- **Bisnis**: Mencapai Pendapatan Berulang Tahunan (ARR) sebesar **Rp 2.5 Miliar** dengan penyebaran 50+ titik Command Center BPBD Daerah.
 
 ### 8.3. Strategi Keluar (Exit Strategy)
 
