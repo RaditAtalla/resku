@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:shelf/shelf.dart';
 import 'package:shelf/shelf_io.dart' as io;
 import '../../database/local_db.dart';
+import '../../models/rescuer_message.dart';
 
 // SyncServer hosts a local HTTP sync server when in Rescuer Mobile Collector mode.
 // The Rescuer Desktop Dashboard connects to this server over local Wi-Fi to sync database.
@@ -67,12 +68,32 @@ class SyncServer {
     if (path == 'api/sync') {
       try {
         final db = LocalDB();
+
+        // Bidirectional sync: if POST request, extract and save incoming messages from base station/dashboard
+        if (request.method == 'POST') {
+          final bodyStr = await request.readAsString();
+          if (bodyStr.isNotEmpty) {
+            final Map<String, dynamic> body = jsonDecode(bodyStr) as Map<String, dynamic>;
+            final incomingMessages = body['messages'] as List<dynamic>? ?? [];
+            for (var item in incomingMessages) {
+              try {
+                final msg = RescuerMessage.fromMap(Map<String, dynamic>.from(item));
+                await db.saveRescuerMessage(msg);
+              } catch (e) {
+                debugPrint('SyncServer: Error parsing incoming message: $e');
+              }
+            }
+          }
+        }
+
         final survivors = await db.getAllSurvivors();
         final links = await db.getAllNetworkLinks();
+        final messages = await db.getAllRescuerMessages();
 
         final payload = {
           'survivors': survivors.map((s) => s.toMap()).toList(),
           'links': links.map((l) => l.toMap()).toList(),
+          'messages': messages.map((m) => m.toMap()).toList(),
         };
 
         final jsonString = jsonEncode(payload);

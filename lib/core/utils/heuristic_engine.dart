@@ -53,10 +53,13 @@ class HeuristicEngine {
     final double proximityPoints = 25.0 / (1.0 + distance);
 
     // 3. Starvation prevention points based on wait time (max 15 points)
-    final double elapsedMinutes = DateTime.now()
-            .difference(DateTime.fromMillisecondsSinceEpoch(survivor.timestamp))
-            .inSeconds /
-        60.0;
+    final double elapsedMinutes = math.max(
+      0.0,
+      DateTime.now()
+              .difference(DateTime.fromMillisecondsSinceEpoch(survivor.timestamp))
+              .inSeconds /
+          60.0,
+    );
     // 0.2 points per minute elapsed, capped at 15 points (~75 minutes max influence)
     final double waitTimePoints = math.min(15.0, elapsedMinutes * 0.2);
 

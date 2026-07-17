@@ -26,6 +26,7 @@ class _CollectorScreenState extends State<CollectorScreen> {
     // Register listeners for real-time updates from BLE mesh syncing
     BleMeshManager().stateNotifier.addListener(_onMeshStateChanged);
     BleMeshManager().otherDevicesCountNotifier.addListener(_onDevicesCountChanged);
+    BleMeshManager().cooldownSecondsNotifier.addListener(_onMeshStateChanged);
     
     _loadCollectedSurvivors();
   }
@@ -34,6 +35,7 @@ class _CollectorScreenState extends State<CollectorScreen> {
   void dispose() {
     BleMeshManager().stateNotifier.removeListener(_onMeshStateChanged);
     BleMeshManager().otherDevicesCountNotifier.removeListener(_onDevicesCountChanged);
+    BleMeshManager().cooldownSecondsNotifier.removeListener(_onMeshStateChanged);
     super.dispose();
   }
 

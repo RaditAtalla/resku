@@ -185,8 +185,10 @@ class BleMeshManager {
   }
 
   void _startCooldown() async {
+    if (!_isMeshRunning) return;
     stateNotifier.value = MeshState.waiting;
     final intervals = await _getIntervalSettings();
+    if (!_isMeshRunning) return;
     _waitingCountdown = intervals['cooldownS']!;
     cooldownSecondsNotifier.value = _waitingCountdown;
 
@@ -428,7 +430,9 @@ class BleMeshManager {
       }
 
       await _scanSubscription?.cancel();
+      bool isConnecting = false;
       _scanSubscription = fbp.FlutterBluePlus.onScanResults.listen((results) async {
+        if (isConnecting) return;
         for (fbp.ScanResult r in results) {
           final name = r.device.platformName;
           final matchesService = r.advertisementData.serviceUuids.any(
@@ -442,6 +446,7 @@ class BleMeshManager {
               continue;
             }
             debugPrint('Mesh Real BLE: Discovered Resku Peer: $name (${r.device.remoteId})');
+            isConnecting = true;
             await _stopRealScanning();
             await _connectAndSyncReal(r.device);
             break;
@@ -482,7 +487,14 @@ class BleMeshManager {
 
     try {
       await device.connect(timeout: const Duration(seconds: 5));
-      debugPrint('Mesh Real BLE: Connected. Discovering services...');
+      debugPrint('Mesh Real BLE: Connected. Negotiating MTU...');
+      try {
+        await device.requestMtu(512, timeout: 3);
+        debugPrint('Mesh Real BLE: MTU negotiated successfully.');
+      } catch (e) {
+        debugPrint('Mesh Real BLE: MTU negotiation skipped or failed: $e');
+      }
+      debugPrint('Mesh Real BLE: Discovering services...');
 
       final services = await device.discoverServices();
       fbp.BluetoothCharacteristic? syncChar;

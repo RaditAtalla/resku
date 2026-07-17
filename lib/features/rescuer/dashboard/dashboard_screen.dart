@@ -420,7 +420,17 @@ class _RescuerDashboardScreenState extends State<RescuerDashboardScreen> {
                 final url = addressController.text.trim();
                 final uri = Uri.parse(url.endsWith('/') ? '${url}api/sync' : '$url/api/sync');
                 
-                final response = await http.get(uri).timeout(const Duration(seconds: 10));
+                final db = LocalDB();
+                final myMessages = await db.getAllRescuerMessages();
+                final postPayload = {
+                  'messages': myMessages.map((m) => m.toMap()).toList(),
+                };
+
+                final response = await http.post(
+                  uri,
+                  headers: {'content-type': 'application/json'},
+                  body: jsonEncode(postPayload),
+                ).timeout(const Duration(seconds: 10));
                 
                 if (response.statusCode == 200) {
                   setDialogState(() {
@@ -431,16 +441,17 @@ class _RescuerDashboardScreenState extends State<RescuerDashboardScreen> {
                   final decoded = jsonDecode(response.body);
                   List<dynamic> recordsJson = [];
                   List<dynamic> linksJson = [];
+                  List<dynamic> messagesJson = [];
                   
                   if (decoded is Map) {
                     recordsJson = decoded['survivors'] as List<dynamic>? ?? [];
                     linksJson = decoded['links'] as List<dynamic>? ?? [];
+                    messagesJson = decoded['messages'] as List<dynamic>? ?? [];
                   } else if (decoded is List) {
                     recordsJson = decoded;
                   }
                   
                   retrievedCount = recordsJson.length;
-                  final db = LocalDB();
                   
                   for (var item in recordsJson) {
                     final record = SurvivorRecord.fromMap(Map<String, dynamic>.from(item));
@@ -452,8 +463,14 @@ class _RescuerDashboardScreenState extends State<RescuerDashboardScreen> {
                     await db.saveNetworkLink(link);
                   }
 
+                  for (var item in messagesJson) {
+                    final msg = RescuerMessage.fromMap(Map<String, dynamic>.from(item));
+                    await db.saveRescuerMessage(msg);
+                  }
+
                   // Reload dashboard data
                   await _loadSurvivorsFromDb();
+                  await _loadBroadcastLogs();
 
                   setDialogState(() {
                     status = 'SUCCESS';

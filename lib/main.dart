@@ -97,10 +97,12 @@ class LaunchSelectionScreen extends StatelessWidget {
                       children: [
                         Icon(Icons.person_pin_circle, size: 24),
                         SizedBox(width: 12),
-                        Text(
-                          'ENTER SURVIVOR APP',
-                          style: TextStyle(
-                              fontWeight: FontWeight.bold, fontSize: 16),
+                        Flexible(
+                          child: Text(
+                            'ENTER SURVIVOR APP',
+                            style: TextStyle(
+                                fontWeight: FontWeight.bold, fontSize: 16),
+                          ),
                         ),
                       ],
                     ),
@@ -128,10 +130,12 @@ class LaunchSelectionScreen extends StatelessWidget {
                       children: [
                         Icon(Icons.healing, size: 24),
                         SizedBox(width: 12),
-                        Text(
-                          'ENTER RESCUER DASHBOARD',
-                          style: TextStyle(
-                              fontWeight: FontWeight.bold, fontSize: 16),
+                        Flexible(
+                          child: Text(
+                            'ENTER RESCUER DASHBOARD',
+                            style: TextStyle(
+                                fontWeight: FontWeight.bold, fontSize: 16),
+                          ),
                         ),
                       ],
                     ),

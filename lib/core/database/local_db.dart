@@ -71,7 +71,7 @@ class LocalDB {
     await init();
     final List<SurvivorRecord> list = [];
     for (var key in _survivorsBox.keys) {
-      if (key == 'device_uuid') continue;
+      if (key == 'device_uuid' || key == 'device_uuid_survivor' || key == 'device_uuid_rescuer') continue;
       final val = _survivorsBox.get(key);
       if (val != null) {
         try {
@@ -89,7 +89,7 @@ class LocalDB {
     if (!_initialized) return [];
     final List<SurvivorRecord> list = [];
     for (var key in _survivorsBox.keys) {
-      if (key == 'device_uuid') continue;
+      if (key == 'device_uuid' || key == 'device_uuid_survivor' || key == 'device_uuid_rescuer') continue;
       final val = _survivorsBox.get(key);
       if (val != null) {
         try {

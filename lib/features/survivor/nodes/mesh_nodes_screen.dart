@@ -277,7 +277,7 @@ class _MeshNodesScreenState extends State<MeshNodesScreen> {
             Wrap(
               spacing: 6,
               runSpacing: 4,
-              children: node.needs.split(', ').map((need) {
+              children: node.needs.split(', ').where((need) => need.trim().isNotEmpty).map((need) {
                 return Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                   decoration: BoxDecoration(

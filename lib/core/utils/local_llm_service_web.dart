@@ -23,6 +23,7 @@ class LocalLlmService {
 
     try {
       html.window.console.log('Spawning off-thread MLC/WebLLM Web Worker...');
+      _worker?.terminate();
       _worker = html.Worker('llama_worker.js');
       
       _worker!.onMessage.listen((html.MessageEvent event) {

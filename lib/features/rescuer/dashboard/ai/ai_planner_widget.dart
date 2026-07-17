@@ -43,7 +43,7 @@ class _AiPlannerWidgetState extends State<AiPlannerWidget> {
   }
 
   int _calculateTriageScore(SurvivorRecord s) {
-    return HeuristicEngine.calculateTriageScore(s);
+    return HeuristicEngine.calculateTriageScore(s, isArticulationPoint: widget.articulationPoints.contains(s.id));
   }
 
   double _calculateDistance(SurvivorRecord s) {
@@ -133,7 +133,7 @@ class _AiPlannerWidgetState extends State<AiPlannerWidget> {
                               ),
                               const SizedBox(height: 4),
                               ...lowBatteryBridges.map((s) => Text(
-                                '• ${s.name} (${s.id.substring(s.id.length - 6)}) - Batt: ${s.batteryPercentage}%',
+                                '• ${s.name} (${s.id.substring(s.id.length > 6 ? s.id.length - 6 : 0)}) - Batt: ${s.batteryPercentage}%',
                                 style: const TextStyle(
                                   color: AppColors.critical,
                                   fontFamily: 'monospace',

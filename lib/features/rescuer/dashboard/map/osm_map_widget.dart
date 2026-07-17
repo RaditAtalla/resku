@@ -68,7 +68,11 @@ class _OsmMapWidgetState extends State<OsmMapWidget> with SingleTickerProviderSt
       final focusedIndex = widget.survivors.indexWhere((s) => s.id == widget.focusedSurvivorId);
       if (focusedIndex != -1) {
         final focusedSurvivor = widget.survivors[focusedIndex];
-        _mapController.move(LatLng(focusedSurvivor.latitude, focusedSurvivor.longitude), 16.0);
+        try {
+          _mapController.move(LatLng(focusedSurvivor.latitude, focusedSurvivor.longitude), 16.0);
+        } catch (e) {
+          debugPrint('OsmMapWidget Error: MapController move failed (map likely not ready yet): $e');
+        }
       }
     }
   }

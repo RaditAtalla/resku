@@ -36,6 +36,7 @@ class _SurvivorFormScreenState extends State<SurvivorFormScreen>
   final PageController _pageController = PageController();
   int _currentPageIndex = 0;
   Timer? _pageTimer;
+  bool _formPrepopulated = false;
 
 
 
@@ -215,7 +216,7 @@ class _SurvivorFormScreenState extends State<SurvivorFormScreen>
     final all = await db.getAllSurvivors();
     final existing = all.where((s) => s.id == myId).toList();
     
-    if (existing.isNotEmpty && mounted) {
+    if (!_formPrepopulated && existing.isNotEmpty && mounted) {
       final localRecord = existing.first;
       setState(() {
         _nameController.text = localRecord.name == 'Anonymous' ? '' : localRecord.name;
@@ -224,6 +225,7 @@ class _SurvivorFormScreenState extends State<SurvivorFormScreen>
         if (localRecord.needs.isNotEmpty) {
           _needs.addAll(localRecord.needs.split(', ').where((s) => s.isNotEmpty));
         }
+        _formPrepopulated = true;
       });
     }
 
