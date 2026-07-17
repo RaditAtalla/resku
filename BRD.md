@@ -178,7 +178,7 @@ Berikut adalah perbandingan posisi strategis Resku terhadap alternatif solusi ko
 
 ### 8.3. Strategi Keluar (Exit Strategy)
 
-1. **Akuisisi Strategis**: Diakuisisi oleh perusahaan komunikasi satelit global atau operator telekomunikasi nasional (seperti Garmin, Telkomsel, Starlink) yang membutuhkan lisensi protokol BLE Mesh tangguh untuk melengkapi jangkauan area buta sinyal satelit.
+1. **Initial Public Offering (IPO)**: Penawaran umum perdana saham di Bursa Efek Indonesia (BEI) untuk memperkuat permodalan, memperluas jangkauan infrastruktur mesh nasional, serta memberikan exit value likuid bagi investor awal dan tim pendiri.
 2. **Kemitraan BUMN Penyelenggara Keamanan**: Transisi spin-off produk di bawah naungan BUMN teknologi pertahanan dan komunikasi kritis nasional (seperti PT Len Industri) untuk keberlanjutan pemeliharaan oleh negara.
 3. **Ekspansi Komersial B2B**: Lisensi software mesh dilisensikan untuk kebutuhan pemantauan keselamatan pekerja di industri berisiko tinggi tanpa internet (seperti pertambangan bawah tanah dan kehutanan terpencil).
 
