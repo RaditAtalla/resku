@@ -6,6 +6,7 @@ import '../../../core/utils/design_system.dart';
 import '../../../core/network/ble/ble_mesh_manager.dart';
 import 'dart:async';
 import 'package:geolocator/geolocator.dart';
+import 'package:battery_plus/battery_plus.dart';
 
 class SurvivorFormScreen extends StatefulWidget {
   const SurvivorFormScreen({super.key});
@@ -332,6 +333,11 @@ class _SurvivorFormScreenState extends State<SurvivorFormScreen>
       seqNum = existing.first.sequenceNumber + 1;
     }
 
+    int batteryLevel = 100;
+    try {
+      batteryLevel = await Battery().batteryLevel;
+    } catch (_) {}
+
     final record = SurvivorRecord(
       id: myId,
       name: name.isEmpty ? 'Anonymous' : name,
@@ -341,6 +347,7 @@ class _SurvivorFormScreenState extends State<SurvivorFormScreen>
       needs: _needs.join(', '),
       timestamp: DateTime.now().millisecondsSinceEpoch,
       sequenceNumber: seqNum,
+      batteryPercentage: batteryLevel,
     );
 
     // Save to local database

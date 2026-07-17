@@ -113,6 +113,13 @@ class SurvivorsTableWidget extends StatelessWidget {
                               ),
                             ),
                             const Expanded(
+                              flex: 2,
+                              child: Text(
+                                'BATTERY',
+                                style: AppTextStyles.bodyMuted,
+                              ),
+                            ),
+                            const Expanded(
                               flex: 4,
                               child: Text(
                                 'PRIMARY NEEDS',
@@ -192,6 +199,41 @@ class SurvivorsTableWidget extends StatelessWidget {
                                   child: Align(
                                     alignment: Alignment.centerLeft,
                                     child: ReskuBadge(status: survivor.status),
+                                  ),
+                                ),
+
+                                // Battery Percentage
+                                Expanded(
+                                  flex: 2,
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        survivor.batteryPercentage > 50
+                                            ? Icons.battery_full
+                                            : survivor.batteryPercentage > 20
+                                                ? Icons.battery_charging_full
+                                                : Icons.battery_alert,
+                                        size: 12,
+                                        color: survivor.batteryPercentage > 50
+                                            ? AppColors.safe
+                                            : survivor.batteryPercentage > 20
+                                                ? AppColors.injured
+                                                : AppColors.critical,
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        '${survivor.batteryPercentage}%',
+                                        style: AppTextStyles.monospaceLabel.copyWith(
+                                          fontWeight: FontWeight.bold,
+                                          color: survivor.batteryPercentage > 50
+                                              ? AppColors.safe
+                                              : survivor.batteryPercentage > 20
+                                                  ? AppColors.injured
+                                                  : AppColors.critical,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
 

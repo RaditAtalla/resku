@@ -31,6 +31,34 @@
 
   <title>resku</title>
   <link rel="manifest" href="manifest.json">
+  
+  <!-- Configure WebAssembly & WebGPU Bridge Pinning -->
+  <script>
+    // Pin compilation assets to stable release tags
+    window.LLAMADART_WASM_BINARY_URL = "https://cdn.jsdelivr.net/npm/@mlc-ai/web-llm@0.2.46/dist/mlc-common.wasm";
+    window.LLAMADART_WEBGPU_ACCELERATOR = "webgpu";
+    
+    // Origin-scoped cache utility to prevent re-downloads of GGUF model files
+    async function getOrFetchCachedModel(url, filename) {
+      const cacheName = 'resku-local-models';
+      const cache = await caches.open(cacheName);
+      
+      const cachedResponse = await cache.match(url);
+      if (cachedResponse) {
+        console.log('Model loaded from browser cache storage API.');
+        return await cachedResponse.blob();
+      }
+      
+      console.log('Model not in cache. Downloading via background fetch...');
+      const response = await fetch(url);
+      
+      if (!response.ok) throw new Error('Failed to fetch model weights');
+      
+      // Clone response to cache it while streaming to browser storage
+      await cache.put(url, response.clone());
+      return await response.blob();
+    }
+  </script>
 </head>
 <body>
   <!--

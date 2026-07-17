@@ -68,8 +68,14 @@ class SyncServer {
       try {
         final db = LocalDB();
         final survivors = await db.getAllSurvivors();
-        final list = survivors.map((s) => s.toMap()).toList();
-        final jsonString = jsonEncode(list);
+        final links = await db.getAllNetworkLinks();
+
+        final payload = {
+          'survivors': survivors.map((s) => s.toMap()).toList(),
+          'links': links.map((l) => l.toMap()).toList(),
+        };
+
+        final jsonString = jsonEncode(payload);
 
         return Response.ok(
           jsonString,
@@ -77,7 +83,7 @@ class SyncServer {
         );
       } catch (e) {
         debugPrint('SyncServer Error in /api/sync handler: $e');
-        return Response.internalServerError(body: 'Error retrieving survivors: $e');
+        return Response.internalServerError(body: 'Error retrieving sync data: $e');
       }
     }
 

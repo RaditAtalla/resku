@@ -13,6 +13,7 @@ class AiPlannerWidget extends StatefulWidget {
   final VoidCallback onGeneratePlan;
   final ValueChanged<String> onDeployRescueUnit;
   final ValueChanged<String> onSendBroadcast;
+  final Set<String> articulationPoints;
 
   const AiPlannerWidget({
     super.key,
@@ -23,6 +24,7 @@ class AiPlannerWidget extends StatefulWidget {
     required this.onGeneratePlan,
     required this.onDeployRescueUnit,
     required this.onSendBroadcast,
+    required this.articulationPoints,
   });
 
   @override
@@ -50,6 +52,9 @@ class _AiPlannerWidgetState extends State<AiPlannerWidget> {
 
   @override
   Widget build(BuildContext context) {
+    final lowBatteryBridges = widget.survivors.where((s) =>
+        widget.articulationPoints.contains(s.id) && s.batteryPercentage < 20).toList();
+
     return Column(
       children: [
         // CARD 1: AI Action Planner Card using ReskuCard
@@ -89,6 +94,60 @@ class _AiPlannerWidgetState extends State<AiPlannerWidget> {
                   ],
                 ),
                 const SizedBox(height: 12),
+
+                // Low-Battery Bridge Node Warning Banner
+                if (lowBatteryBridges.isNotEmpty) ...[
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: AppColors.critical.withValues(alpha: 0.1),
+                      border: Border.all(color: AppColors.critical, width: 1.5),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Icon(Icons.warning_amber_rounded, color: AppColors.critical, size: 20),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'CRITICAL LINK LOSS IMMINENT',
+                                style: TextStyle(
+                                  color: AppColors.critical,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 10,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                'The following articulation point(s) have critical battery levels (<20%). Peer-to-peer network partitions will occur if they power down:',
+                                style: TextStyle(
+                                  color: AppColors.critical.withValues(alpha: 0.9),
+                                  fontSize: 8.5,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              ...lowBatteryBridges.map((s) => Text(
+                                '• ${s.name} (${s.id.substring(s.id.length - 6)}) - Batt: ${s.batteryPercentage}%',
+                                style: const TextStyle(
+                                  color: AppColors.critical,
+                                  fontFamily: 'monospace',
+                                  fontSize: 8.5,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              )),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
 
                 // Generate Button using ReskuButton
                 ReskuButton.primary(
@@ -195,7 +254,7 @@ class _AiPlannerWidgetState extends State<AiPlannerWidget> {
                                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                           children: [
                                             Text(
-                                              'Dist: ${dist.toStringAsFixed(1)}km • Needs: ${s.needs.substring(0, s.needs.length > 20 ? 20 : s.needs.length)}...',
+                                              'Dist: ${dist.toStringAsFixed(1)}km • Batt: ${s.batteryPercentage}% • Needs: ${s.needs.substring(0, s.needs.length > 20 ? 20 : s.needs.length)}...',
                                               style: AppTextStyles.bodyMuted.copyWith(fontFamily: 'monospace'),
                                             ),
                                             const Text(

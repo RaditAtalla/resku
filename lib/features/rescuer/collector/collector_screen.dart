@@ -472,7 +472,40 @@ class _CollectorScreenState extends State<CollectorScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(s.name, style: AppTextStyles.bodyBold),
-              ReskuBadge(status: s.status),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    s.batteryPercentage > 50
+                        ? Icons.battery_full
+                        : s.batteryPercentage > 20
+                            ? Icons.battery_charging_full
+                            : Icons.battery_alert,
+                    size: 10,
+                    color: s.batteryPercentage > 50
+                        ? AppColors.safe
+                        : s.batteryPercentage > 20
+                            ? AppColors.injured
+                            : AppColors.critical,
+                  ),
+                  const SizedBox(width: 2),
+                  Text(
+                    '${s.batteryPercentage}%',
+                    style: TextStyle(
+                      fontFamily: 'monospace',
+                      fontSize: 8,
+                      fontWeight: FontWeight.bold,
+                      color: s.batteryPercentage > 50
+                          ? AppColors.safe
+                          : s.batteryPercentage > 20
+                              ? AppColors.injured
+                              : AppColors.critical,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  ReskuBadge(status: s.status),
+                ],
+              ),
             ],
           ),
           const SizedBox(height: 6),

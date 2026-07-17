@@ -12,6 +12,8 @@ class OsmMapWidget extends StatefulWidget {
   final ValueChanged<String> onSearchChanged;
   final ValueChanged<String> onSurvivorSelected;
   final VoidCallback onRefocusBaseCamp;
+  final Set<String> articulationPoints;
+  final Map<String, String> nodeToCentroid;
 
   const OsmMapWidget({
     super.key,
@@ -21,6 +23,8 @@ class OsmMapWidget extends StatefulWidget {
     required this.onSearchChanged,
     required this.onSurvivorSelected,
     required this.onRefocusBaseCamp,
+    required this.articulationPoints,
+    required this.nodeToCentroid,
   });
 
   @override
@@ -173,6 +177,10 @@ class _OsmMapWidgetState extends State<OsmMapWidget> with SingleTickerProviderSt
                             break;
                         }
 
+                        final isArticulationPoint = widget.articulationPoints.contains(survivor.id);
+                        final isCentroid = widget.nodeToCentroid.values.contains(survivor.id) &&
+                            widget.nodeToCentroid[survivor.id] == survivor.id;
+
                         return Marker(
                           point: LatLng(survivor.latitude, survivor.longitude),
                           width: 100.0,
@@ -185,7 +193,7 @@ class _OsmMapWidgetState extends State<OsmMapWidget> with SingleTickerProviderSt
                                 Stack(
                                   alignment: Alignment.center,
                                   children: [
-                                    if (isCritical)
+                                    if (isCritical || isArticulationPoint)
                                       AnimatedBuilder(
                                         animation: _pulseAnimation,
                                         builder: (context, child) {
@@ -194,7 +202,7 @@ class _OsmMapWidgetState extends State<OsmMapWidget> with SingleTickerProviderSt
                                             height: 14 + _pulseAnimation.value,
                                             decoration: BoxDecoration(
                                               shape: BoxShape.circle,
-                                              color: AppColors.critical.withValues(
+                                              color: (isArticulationPoint ? AppColors.orange : AppColors.critical).withValues(
                                                 alpha: (1.0 - (_pulseAnimation.value / 12.0)).clamp(0.0, 1.0) * 0.5,
                                               ),
                                             ),
@@ -208,8 +216,12 @@ class _OsmMapWidgetState extends State<OsmMapWidget> with SingleTickerProviderSt
                                         shape: BoxShape.circle,
                                         color: pinColor,
                                         border: Border.all(
-                                          color: isFocused ? AppColors.orange : Colors.white,
-                                          width: isFocused ? 3 : 2,
+                                          color: isFocused
+                                              ? AppColors.orange
+                                              : isCentroid
+                                                  ? Colors.yellowAccent
+                                                  : Colors.white,
+                                          width: (isFocused || isCentroid) ? 3 : 2,
                                         ),
                                         boxShadow: const [
                                           BoxShadow(
@@ -219,6 +231,9 @@ class _OsmMapWidgetState extends State<OsmMapWidget> with SingleTickerProviderSt
                                           )
                                         ],
                                       ),
+                                      child: isCentroid
+                                          ? const Icon(Icons.star, color: Colors.white, size: 8)
+                                          : null,
                                     ),
                                   ],
                                 ),
@@ -228,6 +243,9 @@ class _OsmMapWidgetState extends State<OsmMapWidget> with SingleTickerProviderSt
                                   decoration: BoxDecoration(
                                     color: isFocused ? AppColors.orange : AppColors.black,
                                     borderRadius: BorderRadius.circular(4),
+                                    border: isCentroid
+                                        ? Border.all(color: Colors.yellowAccent, width: 1)
+                                        : null,
                                     boxShadow: const [
                                       BoxShadow(
                                         color: Colors.black12,
@@ -237,7 +255,7 @@ class _OsmMapWidgetState extends State<OsmMapWidget> with SingleTickerProviderSt
                                     ],
                                   ),
                                   child: Text(
-                                    survivor.name,
+                                    '${survivor.name}${isCentroid ? " ✦ HUB" : ""}',
                                     textAlign: TextAlign.center,
                                     overflow: TextOverflow.ellipsis,
                                     style: const TextStyle(

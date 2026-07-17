@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import '../models/survivor_record.dart';
 import '../models/rescuer_message.dart';
+import '../models/network_link.dart';
 
 // LocalDB manages local storage (using Hive) for survivors and rescuer data.
 class LocalDB {
@@ -12,6 +13,7 @@ class LocalDB {
 
   late Box _survivorsBox;
   late Box _messagesBox;
+  late Box _linksBox;
   bool _initialized = false;
 
   Future<void> init() async {
@@ -20,6 +22,7 @@ class LocalDB {
     await Hive.initFlutter();
     _survivorsBox = await Hive.openBox('survivor_records_box');
     _messagesBox = await Hive.openBox('rescuer_messages_box');
+    _linksBox = await Hive.openBox('network_links_box');
     _initialized = true;
 
     // Auto-prune stale logs on database load
@@ -204,7 +207,73 @@ class LocalDB {
       }
     }
 
-    debugPrint('LocalDB Pruner: Cleanup complete. Pruned: $prunedSurvivors survivor logs, $prunedMessages announcements.');
+    // 3. Prune stale network links (older than 15 minutes = 900,000 ms)
+    final linkCutoff = DateTime.now().subtract(const Duration(minutes: 15)).millisecondsSinceEpoch;
+    final linkKeys = _linksBox.keys.toList();
+    int prunedLinks = 0;
+    for (var key in linkKeys) {
+      final val = _linksBox.get(key);
+      if (val != null) {
+        try {
+          final link = NetworkLink.fromMap(Map<String, dynamic>.from(val));
+          if (link.timestamp < linkCutoff) {
+            await _linksBox.delete(key);
+            prunedLinks++;
+          }
+        } catch (e) {
+          debugPrint('LocalDB Pruner: Error parsing link during prune for key $key: $e');
+        }
+      }
+    }
+
+    debugPrint('LocalDB Pruner: Cleanup complete. Pruned: $prunedSurvivors survivor logs, $prunedMessages announcements, $prunedLinks network links.');
+  }
+
+  // Save or update a network link
+  Future<void> saveNetworkLink(NetworkLink link) async {
+    await init();
+    await _linksBox.put(link.key, link.toMap());
+    debugPrint('Saving network link to DB: ${link.key}');
+  }
+
+  // Save or update a network link synchronously
+  void saveNetworkLinkSync(NetworkLink link) {
+    if (!_initialized) return;
+    _linksBox.put(link.key, link.toMap());
+  }
+
+  // Fetch all known network links
+  Future<List<NetworkLink>> getAllNetworkLinks() async {
+    await init();
+    final List<NetworkLink> list = [];
+    for (var key in _linksBox.keys) {
+      final val = _linksBox.get(key);
+      if (val != null) {
+        try {
+          list.add(NetworkLink.fromMap(Map<String, dynamic>.from(val)));
+        } catch (e) {
+          debugPrint('Error parsing network link for key $key: $e');
+        }
+      }
+    }
+    return list;
+  }
+
+  // Fetch all known network links synchronously
+  List<NetworkLink> getAllNetworkLinksSync() {
+    if (!_initialized) return [];
+    final List<NetworkLink> list = [];
+    for (var key in _linksBox.keys) {
+      final val = _linksBox.get(key);
+      if (val != null) {
+        try {
+          list.add(NetworkLink.fromMap(Map<String, dynamic>.from(val)));
+        } catch (e) {
+          debugPrint('Error parsing network link synchronously for key $key: $e');
+        }
+      }
+    }
+    return list;
   }
 }
 

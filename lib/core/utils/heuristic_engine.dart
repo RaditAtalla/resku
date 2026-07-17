@@ -31,8 +31,8 @@ class HeuristicEngine {
   }
 
   // Computes the dynamic triage recommendation score (0 to 100) for a survivor record.
-  // Urgency Points (Max 60) + Proximity Points (Max 25) + Starvation Prevention Wait points (Max 15)
-  static int calculateTriageScore(SurvivorRecord survivor) {
+  // Urgency Points (Max 60) + Proximity Points (Max 25) + Starvation Prevention Wait points (Max 15) + Relay Boost (Max 10)
+  static int calculateTriageScore(SurvivorRecord survivor, {bool isArticulationPoint = false}) {
     // 1. Status Urgency points
     int statusPoints = 0;
     switch (survivor.status) {
@@ -60,18 +60,24 @@ class HeuristicEngine {
     // 0.2 points per minute elapsed, capped at 15 points (~75 minutes max influence)
     final double waitTimePoints = math.min(15.0, elapsedMinutes * 0.2);
 
+    // 4. Critical communication relay (articulation point) boost to preserve mesh topology (max 10 points)
+    final double relayBoost = isArticulationPoint ? 10.0 : 0.0;
+
     // Clamp combined score between 0 and 100
-    final double total = statusPoints + proximityPoints + waitTimePoints;
+    final double total = statusPoints + proximityPoints + waitTimePoints + relayBoost;
     return total.round().clamp(0, 100);
   }
 
   // Filters out resolved (safe) survivors and sorts remaining ones descending by triage priority score
-  static List<SurvivorRecord> sortDispatchQueue(List<SurvivorRecord> survivors) {
+  static List<SurvivorRecord> sortDispatchQueue(
+    List<SurvivorRecord> survivors, {
+    Set<String> articulationPoints = const {},
+  }) {
     final active = survivors.where((s) => s.status != SurvivorStatus.safe).toList();
     
     active.sort((a, b) {
-      final int scoreA = calculateTriageScore(a);
-      final int scoreB = calculateTriageScore(b);
+      final int scoreA = calculateTriageScore(a, isArticulationPoint: articulationPoints.contains(a.id));
+      final int scoreB = calculateTriageScore(b, isArticulationPoint: articulationPoints.contains(b.id));
       
       // Secondary sort key: distance from base camp (closer first)
       if (scoreA == scoreB) {

@@ -1,15 +1,19 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import '../../../core/database/local_db.dart';
 import '../../../core/models/survivor_record.dart';
 import '../../../core/models/rescuer_message.dart';
+import '../../../core/models/network_link.dart';
+import '../../../core/network/network_analysis_engine.dart';
 import '../../../core/utils/design_system.dart';
 import '../../../core/utils/heuristic_engine.dart';
 import 'map/osm_map_widget.dart';
 import 'table/survivors_table_widget.dart';
 import 'ai/ai_planner_widget.dart';
+import 'ai/copilot_chat_widget.dart';
 
 // Central Rescuer Dashboard UI for Desktop / Web.
 // Refactored to leverage the unified design system.
@@ -28,6 +32,9 @@ class _RescuerDashboardScreenState extends State<RescuerDashboardScreen> {
   bool _isAiLoading = false;
   List<SurvivorRecord> _aiPlan = [];
   String? _focusedSurvivorId;
+  Set<String> _articulationPoints = {};
+  Map<String, String> _nodeToCentroid = {}; // maps nodeId -> medoid node ID
+  bool _showCopilotChat = false;
   
   // Toast notifications state
   String? _toastText;
@@ -60,9 +67,28 @@ class _RescuerDashboardScreenState extends State<RescuerDashboardScreen> {
   Future<void> _loadSurvivorsFromDb() async {
     final db = LocalDB();
     final list = await db.getAllSurvivors();
+    final links = await db.getAllNetworkLinks();
+
+    // Run SPAN topological network graph computations
+    final nodeIds = list.map((s) => s.id).toList();
+    final adj = NetworkAnalysisEngine.buildAdjacencyList(list, links);
+    final components = NetworkAnalysisEngine.findConnectedComponents(nodeIds, adj);
+
+    final Map<String, String> nodeToCentroid = {};
+    for (var component in components) {
+      final centroidId = NetworkAnalysisEngine.findTopologicalCentroid(component, adj);
+      for (var nodeId in component) {
+        nodeToCentroid[nodeId] = centroidId;
+      }
+    }
+
+    final articulationPoints = NetworkAnalysisEngine.findArticulationPoints(nodeIds, adj);
+
     if (mounted) {
       setState(() {
         _survivors = list;
+        _nodeToCentroid = nodeToCentroid;
+        _articulationPoints = articulationPoints;
       });
     }
   }
@@ -77,6 +103,148 @@ class _RescuerDashboardScreenState extends State<RescuerDashboardScreen> {
         _broadcastLogs.addAll(list);
       });
     }
+  }
+
+  String _compileSystemGraphContext() {
+    final sb = StringBuffer();
+    sb.writeln('You are the Resku Disaster Copilot, an offline AI assistant coordinating search and rescue operations.');
+    sb.writeln('You are running on-device via WebGPU local inference.');
+    sb.writeln('Below is the real-time topological analysis of the Smartphone Ad-hoc Network (SPAN) active in the field:');
+    sb.writeln();
+
+    sb.writeln('## Mesh Network Statistics');
+    sb.writeln('- Total active survivor devices (vertices): ${_survivors.length}');
+    sb.writeln('- Connected ad-hoc network components: ${(_nodeToCentroid.values.toSet()).length}');
+    sb.writeln();
+
+    sb.writeln('## Staging Area Hubs (Centroids)');
+    final uniqueCentroids = _nodeToCentroid.values.toSet();
+    if (uniqueCentroids.isEmpty) {
+      sb.writeln('- None mapped.');
+    } else {
+      for (var cid in uniqueCentroids) {
+        final hub = _survivors.firstWhere((s) => s.id == cid, orElse: () => SurvivorRecord(id: cid, name: 'Unknown', latitude: 0, longitude: 0, status: SurvivorStatus.safe, needs: '', timestamp: 0, sequenceNumber: 0, batteryPercentage: 100));
+        sb.writeln('- Hub Node: ${hub.name} (${hub.id.substring(math.max(0, hub.id.length - 6))}) at Lat/Lon: ${hub.latitude.toStringAsFixed(4)}, ${hub.longitude.toStringAsFixed(4)}');
+      }
+    }
+    sb.writeln();
+
+    sb.writeln("## Critical Communication Relays (Tarjan's Articulation Points)");
+    if (_articulationPoints.isEmpty) {
+      sb.writeln('- No single point of failure (cut-vertices) detected. Ad-hoc topology is robust.');
+    } else {
+      sb.writeln('WARNING: The following nodes are critical relays. If they fail, the network will partition:');
+      for (var apId in _articulationPoints) {
+        final node = _survivors.firstWhere((s) => s.id == apId, orElse: () => SurvivorRecord(id: apId, name: 'Unknown', latitude: 0, longitude: 0, status: SurvivorStatus.safe, needs: '', timestamp: 0, sequenceNumber: 0, batteryPercentage: 100));
+        sb.writeln("- Relay: ${node.name} (${node.id.substring(math.max(0, node.id.length - 6))}) | Battery: ${node.batteryPercentage}%${node.batteryPercentage < 20 ? ' [WARNING: CRITICAL LOW BATTERY]' : ''}");
+      }
+    }
+    sb.writeln();
+
+    sb.writeln('## Priority Rescue Dispatch Queue (Heuristics-Sorted)');
+    final activeQueue = _survivors.where((s) => s.status != SurvivorStatus.safe).toList();
+    if (activeQueue.isEmpty) {
+      sb.writeln('- No pending survivors requiring urgent triage.');
+    } else {
+      final sorted = HeuristicEngine.sortDispatchQueue(_survivors, articulationPoints: _articulationPoints);
+      for (int i = 0; i < sorted.length; i++) {
+        final s = sorted[i];
+        sb.writeln('${i + 1}. ${s.name} (${s.id.substring(math.max(0, s.id.length - 6))})');
+        sb.writeln('   - Status: ${s.status.name.toUpperCase()}');
+        sb.writeln('   - Needs: ${s.needs.isNotEmpty ? s.needs : "None reported"}');
+        sb.writeln('   - Battery: ${s.batteryPercentage}%');
+        sb.writeln('   - Proximity: ${HeuristicEngine.calculateDistanceFromBaseCamp(s.latitude, s.longitude).toStringAsFixed(2)} km');
+      }
+    }
+    sb.writeln();
+    sb.writeln('Keep answers concise, strategic, and tactical. Answer user queries by analyzing this system context.');
+    return sb.toString();
+  }
+
+  Future<void> _generateTestData() async {
+    final db = LocalDB();
+    
+    // Create survivors around Monas in Jakarta
+    final survivors = [
+      SurvivorRecord(
+        id: 'survivor-budi-id-123456',
+        name: 'Budi Santoso',
+        latitude: -6.1760,
+        longitude: 106.8275,
+        status: SurvivorStatus.critical,
+        needs: 'Splint, Water, Bleeding Control',
+        timestamp: DateTime.now().millisecondsSinceEpoch,
+        sequenceNumber: 1,
+        batteryPercentage: 12,
+      ),
+      SurvivorRecord(
+        id: 'survivor-aditya-id-234567',
+        name: 'Aditya Pratama',
+        latitude: -6.1745,
+        longitude: 106.8260,
+        status: SurvivorStatus.injured,
+        needs: 'Insulin, Food',
+        timestamp: DateTime.now().millisecondsSinceEpoch,
+        sequenceNumber: 1,
+        batteryPercentage: 55,
+      ),
+      SurvivorRecord(
+        id: 'survivor-siti-id-345678',
+        name: 'Siti Rahma',
+        latitude: -6.1770,
+        longitude: 106.8285,
+        status: SurvivorStatus.safe,
+        needs: 'Blanket',
+        timestamp: DateTime.now().millisecondsSinceEpoch,
+        sequenceNumber: 1,
+        batteryPercentage: 92,
+      ),
+      SurvivorRecord(
+        id: 'survivor-dewi-id-456789',
+        name: 'Dewi Lestari',
+        latitude: -6.1730,
+        longitude: 106.8290,
+        status: SurvivorStatus.injured,
+        needs: 'Inhaler',
+        timestamp: DateTime.now().millisecondsSinceEpoch,
+        sequenceNumber: 1,
+        batteryPercentage: 18,
+      ),
+      SurvivorRecord(
+        id: 'survivor-eko-id-567890',
+        name: 'Eko Wijaya',
+        latitude: -6.1720,
+        longitude: 106.8250,
+        status: SurvivorStatus.critical,
+        needs: 'Splint, First Aid Kit',
+        timestamp: DateTime.now().millisecondsSinceEpoch,
+        sequenceNumber: 1,
+        batteryPercentage: 45,
+      ),
+    ];
+
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final links = [
+      NetworkLink(sourceId: 'survivor-dewi-id-456789', targetId: 'survivor-eko-id-567890', timestamp: now),
+      NetworkLink(sourceId: 'survivor-eko-id-567890', targetId: 'survivor-aditya-id-234567', timestamp: now),
+      NetworkLink(sourceId: 'survivor-aditya-id-234567', targetId: 'survivor-budi-id-123456', timestamp: now),
+      NetworkLink(sourceId: 'survivor-budi-id-123456', targetId: 'survivor-siti-id-345678', timestamp: now),
+    ];
+
+    for (var s in survivors) {
+      await db.saveSurvivorRecord(s);
+    }
+    for (var l in links) {
+      await db.saveNetworkLink(l);
+    }
+
+    triggerToast('Generated test data around Monas!', Icons.grid_view_rounded);
+    await _loadSurvivorsFromDb();
+    
+    // Focus the first survivor (Budi) so the map auto-pans to Monas
+    setState(() {
+      _focusedSurvivorId = 'survivor-budi-id-123456';
+    });
   }
 
   void _startClock() {
@@ -165,7 +333,7 @@ class _RescuerDashboardScreenState extends State<RescuerDashboardScreen> {
     Timer(const Duration(seconds: 1), () {
       if (!mounted) return;
       
-      final prioritizedQueue = HeuristicEngine.sortDispatchQueue(_survivors);
+      final prioritizedQueue = HeuristicEngine.sortDispatchQueue(_survivors, articulationPoints: _articulationPoints);
 
       setState(() {
         _aiPlan = prioritizedQueue;
@@ -193,6 +361,7 @@ class _RescuerDashboardScreenState extends State<RescuerDashboardScreen> {
       needs: 'None (Rescue unit arrived)',
       timestamp: DateTime.now().millisecondsSinceEpoch,
       sequenceNumber: survivor.sequenceNumber + 1,
+      batteryPercentage: survivor.batteryPercentage,
     );
 
     setState(() {
@@ -259,13 +428,28 @@ class _RescuerDashboardScreenState extends State<RescuerDashboardScreen> {
                     details = 'Downloading and merging survivor databases...';
                   });
 
-                  final List<dynamic> recordsJson = jsonDecode(response.body);
-                  retrievedCount = recordsJson.length;
+                  final decoded = jsonDecode(response.body);
+                  List<dynamic> recordsJson = [];
+                  List<dynamic> linksJson = [];
                   
+                  if (decoded is Map) {
+                    recordsJson = decoded['survivors'] as List<dynamic>? ?? [];
+                    linksJson = decoded['links'] as List<dynamic>? ?? [];
+                  } else if (decoded is List) {
+                    recordsJson = decoded;
+                  }
+                  
+                  retrievedCount = recordsJson.length;
                   final db = LocalDB();
+                  
                   for (var item in recordsJson) {
                     final record = SurvivorRecord.fromMap(Map<String, dynamic>.from(item));
                     await db.saveSurvivorRecord(record);
+                  }
+
+                  for (var item in linksJson) {
+                    final link = NetworkLink.fromMap(Map<String, dynamic>.from(item));
+                    await db.saveNetworkLink(link);
                   }
 
                   // Reload dashboard data
@@ -507,6 +691,34 @@ class _RescuerDashboardScreenState extends State<RescuerDashboardScreen> {
           ],
         ),
         actions: [
+          // Generate Test Data Action Button
+          Padding(
+            padding: const EdgeInsets.only(right: 8.0),
+            child: Center(
+              child: ReskuButton.outlined(
+                label: 'GENERATE TEST DATA',
+                icon: Icons.grid_view_rounded,
+                height: 28,
+                onPressed: _generateTestData,
+              ),
+            ),
+          ),
+          // Copilot AI Toggle Button
+          Padding(
+            padding: const EdgeInsets.only(right: 8.0),
+            child: Center(
+              child: ReskuButton.primary(
+                label: 'COPILOT',
+                icon: Icons.psychology_alt,
+                height: 28,
+                onPressed: () {
+                  setState(() {
+                    _showCopilotChat = !_showCopilotChat;
+                  });
+                },
+              ),
+            ),
+          ),
           // Mule Sync Action Button
           Padding(
             padding: const EdgeInsets.only(right: 8.0),
@@ -589,6 +801,23 @@ class _RescuerDashboardScreenState extends State<RescuerDashboardScreen> {
                 },
               ),
             ),
+
+          // Copilot Chat Drawer Overlay
+          if (_showCopilotChat)
+            Positioned(
+              top: 0,
+              bottom: 0,
+              right: 0,
+              width: 360,
+              child: CopilotChatWidget(
+                systemContext: _compileSystemGraphContext(),
+                onClose: () {
+                  setState(() {
+                    _showCopilotChat = false;
+                  });
+                },
+              ),
+            ),
         ],
       ),
     );
@@ -614,6 +843,8 @@ class _RescuerDashboardScreenState extends State<RescuerDashboardScreen> {
                     onSearchChanged: _onSearchChanged,
                     onSurvivorSelected: _focusSurvivor,
                     onRefocusBaseCamp: _refocusBaseCamp,
+                    articulationPoints: _articulationPoints,
+                    nodeToCentroid: _nodeToCentroid,
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -643,6 +874,7 @@ class _RescuerDashboardScreenState extends State<RescuerDashboardScreen> {
               onGeneratePlan: _generateAiPlan,
               onDeployRescueUnit: _deployRescueUnit,
               onSendBroadcast: _sendBroadcast,
+              articulationPoints: _articulationPoints,
             ),
           ),
         ],
@@ -681,6 +913,8 @@ class _RescuerDashboardScreenState extends State<RescuerDashboardScreen> {
                     onSearchChanged: _onSearchChanged,
                     onSurvivorSelected: _focusSurvivor,
                     onRefocusBaseCamp: _refocusBaseCamp,
+                    articulationPoints: _articulationPoints,
+                    nodeToCentroid: _nodeToCentroid,
                   ),
                 ),
                 Padding(
@@ -704,6 +938,7 @@ class _RescuerDashboardScreenState extends State<RescuerDashboardScreen> {
                     onGeneratePlan: _generateAiPlan,
                     onDeployRescueUnit: _deployRescueUnit,
                     onSendBroadcast: _sendBroadcast,
+                    articulationPoints: _articulationPoints,
                   ),
                 ),
               ],

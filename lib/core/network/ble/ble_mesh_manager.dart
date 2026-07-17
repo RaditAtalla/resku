@@ -9,6 +9,7 @@ import 'package:battery_plus/battery_plus.dart';
 import '../../database/local_db.dart';
 import '../../models/survivor_record.dart';
 import '../../models/rescuer_message.dart';
+import '../../models/network_link.dart';
 
 enum MeshState {
   idle,
@@ -218,6 +219,11 @@ class BleMeshManager {
 
       final myId = await LocalDB().getOrCreateDeviceUUID(isRescuer: _isRescuer);
       final all = await LocalDB().getAllSurvivors();
+      int batteryLevel = 100;
+      try {
+        batteryLevel = await _battery.batteryLevel;
+      } catch (_) {}
+
       final localRecord = all.firstWhere((s) => s.id == myId, orElse: () => SurvivorRecord(
         id: myId,
         name: _isRescuer ? 'Rescuer Mule' : 'Anonymous',
@@ -227,6 +233,7 @@ class BleMeshManager {
         needs: '',
         timestamp: DateTime.now().millisecondsSinceEpoch,
         sequenceNumber: 1,
+        batteryPercentage: batteryLevel,
       ));
 
       final service = BleService(
@@ -254,6 +261,16 @@ class BleMeshManager {
             final jsonString = utf8.decode(value);
             final payload = jsonDecode(jsonString) as Map<String, dynamic>;
 
+            // Record direct peer connection link
+            final clientUuid = payload['senderId'] as String? ?? 'unknown';
+            if (clientUuid != 'unknown') {
+              LocalDB().saveNetworkLinkSync(NetworkLink(
+                sourceId: myId,
+                targetId: clientUuid,
+                timestamp: DateTime.now().millisecondsSinceEpoch,
+              ));
+            }
+
             // 1. Process client's delta records
             final clientDelta = payload['delta'] as Map<String, dynamic>? ?? {};
             final clientDeltaSurvivors = clientDelta['survivors'] as List<dynamic>? ?? [];
@@ -267,15 +284,23 @@ class BleMeshManager {
               final msg = RescuerMessage.fromMap(Map<String, dynamic>.from(item));
               LocalDB().saveRescuerMessageSync(msg);
             }
-            debugPrint('Mesh Real BLE GATT: Saved ${clientDeltaSurvivors.length} survivors and ${clientDeltaMessages.length} messages written by client.');
+
+            final clientDeltaLinks = clientDelta['links'] as List<dynamic>? ?? [];
+            for (var item in clientDeltaLinks) {
+              final link = NetworkLink.fromMap(Map<String, dynamic>.from(item));
+              LocalDB().saveNetworkLinkSync(link);
+            }
+            debugPrint('Mesh Real BLE GATT: Saved ${clientDeltaSurvivors.length} survivors, ${clientDeltaMessages.length} messages, and ${clientDeltaLinks.length} links.');
 
             // 2. Process client's LUV to compile delta to send back
             final clientLuv = payload['luv'] as Map<String, dynamic>? ?? {};
             final clientLuvSurvivors = Map<String, dynamic>.from(clientLuv['survivors'] ?? {});
             final clientLuvMessages = Map<String, dynamic>.from(clientLuv['messages'] ?? {});
+            final clientLuvLinks = Map<String, dynamic>.from(clientLuv['links'] ?? {});
 
             final freshLocalSurvivors = LocalDB().getAllSurvivorsSync();
             final freshLocalMessages = LocalDB().getAllRescuerMessagesSync();
+            final freshLocalLinks = LocalDB().getAllNetworkLinksSync();
             
             final List<Map<String, dynamic>> deltaSurvivors = [];
             for (var local in freshLocalSurvivors) {
@@ -292,11 +317,20 @@ class BleMeshManager {
               }
             }
 
+            final List<Map<String, dynamic>> deltaLinks = [];
+            for (var local in freshLocalLinks) {
+              final clientTime = clientLuvLinks[local.key] as int? ?? -1;
+              if (local.timestamp > clientTime) {
+                deltaLinks.add(local.toMap());
+              }
+            }
+
             pendingDeltaToSend = {
               'survivors': deltaSurvivors,
               'messages': deltaMessages,
+              'links': deltaLinks,
             };
-            debugPrint('Mesh Real BLE GATT: Compiled delta to send: ${deltaSurvivors.length} survivors, ${deltaMessages.length} messages.');
+            debugPrint('Mesh Real BLE GATT: Compiled delta to send: ${deltaSurvivors.length} survivors, ${deltaMessages.length} messages, ${deltaLinks.length} links.');
             
             _updateOtherDevicesCount();
             if (onDataSynced != null) {
@@ -318,10 +352,13 @@ class BleMeshManager {
             // Step 1: Return our local LUV catalog
             final freshLocalSurvivors = LocalDB().getAllSurvivorsSync();
             final freshLocalMessages = LocalDB().getAllRescuerMessagesSync();
+            final freshLocalLinks = LocalDB().getAllNetworkLinksSync();
 
             final catalog = {
+              'senderId': myId,
               'survivors': {for (var s in freshLocalSurvivors) s.id: s.sequenceNumber},
-              'messages': {for (var m in freshLocalMessages) m.id: m.timestamp}
+              'messages': {for (var m in freshLocalMessages) m.id: m.timestamp},
+              'links': {for (var l in freshLocalLinks) l.key: l.timestamp}
             };
             payloadString = jsonEncode(catalog);
             debugPrint('Mesh Real BLE GATT: Sending LUV catalog to client: $payloadString');
@@ -465,6 +502,7 @@ class BleMeshManager {
         debugPrint('Mesh Real BLE DTN: Characteristic match. Initiating Epidemic handshake...');
 
         final localDb = LocalDB();
+        final myId = await localDb.getOrCreateDeviceUUID(isRescuer: _isRescuer);
 
         // 1. Read peer LUV catalog map (Step 1)
         stateNotifier.value = MeshState.receiving;
@@ -481,15 +519,28 @@ class BleMeshManager {
           }
         }
 
+        // Record direct peer connection link
+        final peerUuid = peerCatalog['senderId'] as String? ?? 'unknown';
+        if (peerUuid != 'unknown') {
+          await localDb.saveNetworkLink(NetworkLink(
+            sourceId: myId,
+            targetId: peerUuid,
+            timestamp: DateTime.now().millisecondsSinceEpoch,
+          ));
+        }
+
         final peerLuvSurvivors = Map<String, dynamic>.from(peerCatalog['survivors'] ?? {});
         final peerLuvMessages = Map<String, dynamic>.from(peerCatalog['messages'] ?? {});
+        final peerLuvLinks = Map<String, dynamic>.from(peerCatalog['links'] ?? {});
 
         // 2. Compare LUV and compile our local LUV and delta outbox (Step 2)
         final localSurvivors = await localDb.getAllSurvivors();
         final localMessages = await localDb.getAllRescuerMessages();
+        final localLinks = await localDb.getAllNetworkLinks();
 
         final localLuvSurvivors = {for (var s in localSurvivors) s.id: s.sequenceNumber};
         final localLuvMessages = {for (var m in localMessages) m.id: m.timestamp};
+        final localLuvLinks = {for (var l in localLinks) l.key: l.timestamp};
         
         final List<Map<String, dynamic>> deltaSurvivors = [];
         for (var local in localSurvivors) {
@@ -506,19 +557,30 @@ class BleMeshManager {
           }
         }
 
+        final List<Map<String, dynamic>> deltaLinks = [];
+        for (var local in localLinks) {
+          final peerTime = peerLuvLinks[local.key] as int? ?? -1;
+          if (local.timestamp > peerTime) {
+            deltaLinks.add(local.toMap());
+          }
+        }
+
         final writePayload = jsonEncode({
+          'senderId': myId,
           'luv': {
             'survivors': localLuvSurvivors,
             'messages': localLuvMessages,
+            'links': localLuvLinks,
           },
           'delta': {
             'survivors': deltaSurvivors,
             'messages': deltaMessages,
+            'links': deltaLinks,
           },
         });
 
         // Write our LUV + Delta records to the peer
-        debugPrint('Mesh Real BLE DTN: Writing local LUV and delta records (${deltaSurvivors.length} survivors, ${deltaMessages.length} messages) to peer...');
+        debugPrint('Mesh Real BLE DTN: Writing local LUV and delta records (${deltaSurvivors.length} survivors, ${deltaMessages.length} messages, ${deltaLinks.length} links) to peer...');
         await syncChar.write(Uint8List.fromList(utf8.encode(writePayload)));
 
         // 3. Read Peer's delta records back (Step 3)
@@ -547,7 +609,15 @@ class BleMeshManager {
               savedMessages++;
             }
 
-            debugPrint('Mesh Real BLE DTN: Saved $savedSurvivors survivors and $savedMessages messages received from peer.');
+            final peerDeltaLinks = responseDelta['links'] as List<dynamic>? ?? [];
+            int savedLinks = 0;
+            for (var item in peerDeltaLinks) {
+              final link = NetworkLink.fromMap(Map<String, dynamic>.from(item));
+              await localDb.saveNetworkLink(link);
+              savedLinks++;
+            }
+
+            debugPrint('Mesh Real BLE DTN: Saved $savedSurvivors survivors, $savedMessages messages, and $savedLinks links received from peer.');
           } catch (e) {
             debugPrint('Mesh Real BLE DTN: Failed to decode peer delta records: $e');
           }

@@ -208,7 +208,40 @@ class _MeshNodesScreenState extends State<MeshNodesScreen> {
                 node.name,
                 style: AppTextStyles.cardTitle.copyWith(fontSize: 14),
               ),
-              ReskuBadge(status: node.status),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    node.batteryPercentage > 50
+                        ? Icons.battery_full
+                        : node.batteryPercentage > 20
+                            ? Icons.battery_charging_full
+                            : Icons.battery_alert,
+                    size: 10,
+                    color: node.batteryPercentage > 50
+                        ? AppColors.safe
+                        : node.batteryPercentage > 20
+                            ? AppColors.injured
+                            : AppColors.critical,
+                  ),
+                  const SizedBox(width: 2),
+                  Text(
+                    '${node.batteryPercentage}%',
+                    style: TextStyle(
+                      fontFamily: 'monospace',
+                      fontSize: 8,
+                      fontWeight: FontWeight.bold,
+                      color: node.batteryPercentage > 50
+                          ? AppColors.safe
+                          : node.batteryPercentage > 20
+                              ? AppColors.injured
+                              : AppColors.critical,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  ReskuBadge(status: node.status),
+                ],
+              ),
             ],
           ),
           const SizedBox(height: 10),
