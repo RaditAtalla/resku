@@ -161,91 +161,6 @@ class _RescuerDashboardScreenState extends State<RescuerDashboardScreen> {
     return sb.toString();
   }
 
-  Future<void> _generateTestData() async {
-    final db = LocalDB();
-    
-    // Create survivors around Monas in Jakarta
-    final survivors = [
-      SurvivorRecord(
-        id: 'survivor-budi-id-123456',
-        name: 'Budi Santoso',
-        latitude: -6.1760,
-        longitude: 106.8275,
-        status: SurvivorStatus.critical,
-        needs: 'Splint, Water, Bleeding Control',
-        timestamp: DateTime.now().millisecondsSinceEpoch,
-        sequenceNumber: 1,
-        batteryPercentage: 12,
-      ),
-      SurvivorRecord(
-        id: 'survivor-aditya-id-234567',
-        name: 'Aditya Pratama',
-        latitude: -6.1745,
-        longitude: 106.8260,
-        status: SurvivorStatus.injured,
-        needs: 'Insulin, Food',
-        timestamp: DateTime.now().millisecondsSinceEpoch,
-        sequenceNumber: 1,
-        batteryPercentage: 55,
-      ),
-      SurvivorRecord(
-        id: 'survivor-siti-id-345678',
-        name: 'Siti Rahma',
-        latitude: -6.1770,
-        longitude: 106.8285,
-        status: SurvivorStatus.safe,
-        needs: 'Blanket',
-        timestamp: DateTime.now().millisecondsSinceEpoch,
-        sequenceNumber: 1,
-        batteryPercentage: 92,
-      ),
-      SurvivorRecord(
-        id: 'survivor-dewi-id-456789',
-        name: 'Dewi Lestari',
-        latitude: -6.1730,
-        longitude: 106.8290,
-        status: SurvivorStatus.injured,
-        needs: 'Inhaler',
-        timestamp: DateTime.now().millisecondsSinceEpoch,
-        sequenceNumber: 1,
-        batteryPercentage: 18,
-      ),
-      SurvivorRecord(
-        id: 'survivor-eko-id-567890',
-        name: 'Eko Wijaya',
-        latitude: -6.1720,
-        longitude: 106.8250,
-        status: SurvivorStatus.critical,
-        needs: 'Splint, First Aid Kit',
-        timestamp: DateTime.now().millisecondsSinceEpoch,
-        sequenceNumber: 1,
-        batteryPercentage: 45,
-      ),
-    ];
-
-    final now = DateTime.now().millisecondsSinceEpoch;
-    final links = [
-      NetworkLink(sourceId: 'survivor-dewi-id-456789', targetId: 'survivor-eko-id-567890', timestamp: now),
-      NetworkLink(sourceId: 'survivor-eko-id-567890', targetId: 'survivor-aditya-id-234567', timestamp: now),
-      NetworkLink(sourceId: 'survivor-aditya-id-234567', targetId: 'survivor-budi-id-123456', timestamp: now),
-      NetworkLink(sourceId: 'survivor-budi-id-123456', targetId: 'survivor-siti-id-345678', timestamp: now),
-    ];
-
-    for (var s in survivors) {
-      await db.saveSurvivorRecord(s);
-    }
-    for (var l in links) {
-      await db.saveNetworkLink(l);
-    }
-
-    triggerToast('Generated test data around Monas!', Icons.grid_view_rounded);
-    await _loadSurvivorsFromDb();
-    
-    // Focus the first survivor (Budi) so the map auto-pans to Monas
-    setState(() {
-      _focusedSurvivorId = 'survivor-budi-id-123456';
-    });
-  }
 
   void _startClock() {
     _updateClockTime();
@@ -708,18 +623,7 @@ class _RescuerDashboardScreenState extends State<RescuerDashboardScreen> {
           ],
         ),
         actions: [
-          // Generate Test Data Action Button
-          Padding(
-            padding: const EdgeInsets.only(right: 8.0),
-            child: Center(
-              child: ReskuButton.outlined(
-                label: 'GENERATE TEST DATA',
-                icon: Icons.grid_view_rounded,
-                height: 28,
-                onPressed: _generateTestData,
-              ),
-            ),
-          ),
+
           // Copilot AI Toggle Button
           Padding(
             padding: const EdgeInsets.only(right: 8.0),
