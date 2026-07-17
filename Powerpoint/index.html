@@ -1397,42 +1397,128 @@
                     </div>
                 </div>
 
-                <!-- SLIDE 16: Roadmap & Sustainability -->
-                <div id="slide-15" class="slide w-full flex-col justify-center gap-6">
-                    <div class="border-b border-zinc-800 pb-4">
-                        <h2 id="edit-slide13-header" contenteditable="true" class="font-title font-bold text-3xl text-amber-500">13. Roadmap & Keberlanjutan Proyek</h2>
-                        <p id="edit-slide13-subheader" contenteditable="true" class="text-sm text-zinc-400 mt-1">Rencana jangka panjang pengembangan produk dan keberlanjutan masa depan</p>
-                    </div>
-
-                    <!-- Horizontal Timeline -->
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-2 text-xs">
-                        <div class="relative p-5 bg-zinc-900/40 border border-zinc-800 rounded-xl">
-                            <div id="edit-slide13-fase1-badge" contenteditable="true" class="absolute -top-3 left-4 px-2 py-0.5 bg-amber-500 text-zinc-950 font-bold rounded text-[10px] font-mono">FASE 1: R&D (Q1-Q2 2026)</div>
-                            <h4 id="edit-slide13-fase1-title" contenteditable="true" class="font-bold text-zinc-200 mt-2 mb-2">Stabilisasi Protokol Mesh BLE</h4>
-                            <p id="edit-slide13-fase1-desc" contenteditable="true" class="text-zinc-400 leading-relaxed">
-                                Optimalisasi interval role-switching, penulisan library Flutter mesh, integrasi skema serialisasi Protocol Buffers (Protobuf) untuk efisiensi muatan data, serta pengujian daya tahan baterai di berbagai jenis smartphone.
-                            </p>
-                        </div>
-
-                        <div class="relative p-5 bg-zinc-900/40 border border-zinc-800 rounded-xl">
-                            <div id="edit-slide13-fase2-badge" contenteditable="true" class="absolute -top-3 left-4 px-2 py-0.5 bg-amber-500 text-zinc-950 font-bold rounded text-[10px] font-mono">FASE 2: PILOT (Q3 2026)</div>
-                            <h4 id="edit-slide13-fase2-title" contenteditable="true" class="font-bold text-zinc-200 mt-2 mb-2">Uji Coba Lapangan (Yogyakarta)</h4>
-                            <p id="edit-slide13-fase2-desc" contenteditable="true" class="text-zinc-400 leading-relaxed">
-                                Pemasangan 20 unit Resku Hub Beacon di titik evakuasi Gunung Merapi bekerjasama dengan BPBD DIY. Simulasi pencarian korban oleh relawan menggunakan drone pemindai BLE. Pengumpulan data performa transmisi.
-                            </p>
-                        </div>
-
-                        <div class="relative p-5 bg-zinc-900/40 border border-zinc-800 rounded-xl">
-                            <div id="edit-slide13-fase3-badge" contenteditable="true" class="absolute -top-3 left-4 px-2 py-0.5 bg-amber-500 text-zinc-950 font-bold rounded text-[10px] font-mono">FASE 3: SCALE (Q4 2026)</div>
-                            <h4 id="edit-slide13-fase3-title" contenteditable="true" class="font-bold text-zinc-200 mt-2 mb-2">Nasionalisasi & LKPP</h4>
-                            <p id="edit-slide13-fase3-desc" contenteditable="true" class="text-zinc-400 leading-relaxed">
-                                Pendaftaran produk di e-katalog LKPP untuk memfasilitasi pengadaan langsung oleh pemerintah daerah seluruh Indonesia. Peluncuran integrasi dashboard dengan server AISBASARNAS nasional.
-                            </p>
+                <!-- SLIDE 16: Roadmap 5 Tahun (2026-2030) -->
+                <div id="slide-15" class="slide w-full flex-col justify-center gap-4 text-[10px]">
+                    <div class="border-b border-zinc-800 pb-3">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h2 id="edit-slide13-header" contenteditable="true" class="font-title font-bold text-3xl text-amber-500">13. Roadmap 5 Tahun RESKU (2026 – 2030)</h2>
+                                <p id="edit-slide13-subheader" contenteditable="true" class="text-sm text-zinc-400 mt-1">Dari R&amp;D hingga Ekspansi Industri B2B Global — Rencana Pertumbuhan Terstruktur</p>
+                            </div>
+                            <div class="flex items-center gap-2 text-[9px] font-mono">
+                                <span class="px-2 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400">B2G</span>
+                                <span class="px-2 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400">B2NGO</span>
+                                <span class="px-2 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">B2B</span>
+                                <span class="px-2 py-1 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-400">Global</span>
+                            </div>
                         </div>
                     </div>
 
-                    <div id="edit-slide13-sus-box" contenteditable="true" class="p-4 bg-zinc-950 border border-zinc-800 rounded-xl text-xs text-zinc-400 leading-relaxed">
-                        <strong>Keberlanjutan (Sustainability):</strong> Pendanaan komersial B2G dan B2NGO mensubsidi silang pengembangan aplikasi survivor yang akan tetap berstatus gratis dan open-source guna mendukung adopsi massal yang menunjang kepadatan mesh jaringan.
+                    <!-- 5-Phase Timeline Horizontal -->
+                    <div class="grid grid-cols-5 gap-2 mt-1 relative">
+                        <!-- Connecting Arrow Line -->
+                        <div class="absolute top-5 left-[10%] right-[10%] h-px bg-gradient-to-r from-amber-500 via-blue-500 via-emerald-500 to-purple-500 opacity-30 z-0 pointer-events-none"></div>
+
+                        <!-- FASE 1 -->
+                        <div class="relative p-3 bg-zinc-900/50 border border-amber-500/40 rounded-xl flex flex-col gap-1.5 z-10">
+                            <div class="flex items-center gap-1.5 mb-0.5">
+                                <div class="w-2 h-2 rounded-full bg-amber-500 flex-shrink-0"></div>
+                                <span id="edit-slide13-f1-badge" contenteditable="true" class="text-[8px] font-mono font-bold text-amber-400 uppercase tracking-wide">Fase 1 • Q1-Q2 2026</span>
+                            </div>
+                            <h4 id="edit-slide13-f1-title" contenteditable="true" class="font-bold text-zinc-200 text-[10px] leading-tight">R&amp;D &amp; Stabilisasi Mesh</h4>
+                            <p id="edit-slide13-f1-desc" contenteditable="true" class="text-zinc-400 text-[8px] leading-snug">Optimalisasi BLE role-switching, integrasi Protobuf, uji ketahanan baterai 72 jam. Library Flutter mesh open-source dirilis ke komunitas.</p>
+                            <div class="mt-auto pt-1.5 border-t border-zinc-800 flex flex-wrap gap-1">
+                                <span class="px-1 py-0.5 bg-amber-500/10 border border-amber-500/20 rounded text-[7px] text-amber-400 font-mono">R&amp;D</span>
+                                <span class="px-1 py-0.5 bg-amber-500/10 border border-amber-500/20 rounded text-[7px] text-amber-400 font-mono">Internal</span>
+                            </div>
+                        </div>
+
+                        <!-- FASE 2 -->
+                        <div class="relative p-3 bg-zinc-900/50 border border-amber-500/40 rounded-xl flex flex-col gap-1.5 z-10">
+                            <div class="flex items-center gap-1.5 mb-0.5">
+                                <div class="w-2 h-2 rounded-full bg-amber-400 flex-shrink-0"></div>
+                                <span id="edit-slide13-f2-badge" contenteditable="true" class="text-[8px] font-mono font-bold text-amber-400 uppercase tracking-wide">Fase 2 • Q3-Q4 2026</span>
+                            </div>
+                            <h4 id="edit-slide13-f2-title" contenteditable="true" class="font-bold text-zinc-200 text-[10px] leading-tight">Pilot B2G &amp; Pendaftaran LKPP</h4>
+                            <p id="edit-slide13-f2-desc" contenteditable="true" class="text-zinc-400 text-[8px] leading-snug">Uji lapangan 20 Resku Hub Beacon di Merapi bersama BPBD DIY. Pendaftaran produk ke e-Katalog LKPP untuk pengadaan langsung seluruh BPBD Indonesia.</p>
+                            <div class="mt-auto pt-1.5 border-t border-zinc-800 flex flex-wrap gap-1">
+                                <span class="px-1 py-0.5 bg-amber-500/10 border border-amber-500/20 rounded text-[7px] text-amber-400 font-mono">B2G</span>
+                                <span class="px-1 py-0.5 bg-blue-500/10 border border-blue-500/20 rounded text-[7px] text-blue-400 font-mono">BPBD</span>
+                            </div>
+                        </div>
+
+                        <!-- FASE 3 -->
+                        <div class="relative p-3 bg-zinc-900/50 border border-blue-500/40 rounded-xl flex flex-col gap-1.5 z-10">
+                            <div class="flex items-center gap-1.5 mb-0.5">
+                                <div class="w-2 h-2 rounded-full bg-blue-400 flex-shrink-0"></div>
+                                <span id="edit-slide13-f3-badge" contenteditable="true" class="text-[8px] font-mono font-bold text-blue-400 uppercase tracking-wide">Fase 3 • 2027-2028</span>
+                            </div>
+                            <h4 id="edit-slide13-f3-title" contenteditable="true" class="font-bold text-zinc-200 text-[10px] leading-tight">Ekspansi B2NGO &amp; Kemitraan Internasional</h4>
+                            <p id="edit-slide13-f3-desc" contenteditable="true" class="text-zinc-400 text-[8px] leading-snug">Kemitraan resmi dengan PMI, UNOCHA, USAID, dan Red Cross. Mendeploy Resku di 5 negara rawan bencana Asia Tenggara (Filipina, Bangladesh, Nepal).</p>
+                            <div class="mt-auto pt-1.5 border-t border-zinc-800 flex flex-wrap gap-1">
+                                <span class="px-1 py-0.5 bg-blue-500/10 border border-blue-500/20 rounded text-[7px] text-blue-400 font-mono">B2NGO</span>
+                                <span class="px-1 py-0.5 bg-blue-500/10 border border-blue-500/20 rounded text-[7px] text-blue-400 font-mono">SEA</span>
+                            </div>
+                        </div>
+
+                        <!-- FASE 4 -->
+                        <div class="relative p-3 bg-zinc-900/50 border border-emerald-500/40 rounded-xl flex flex-col gap-1.5 z-10">
+                            <div class="flex items-center gap-1.5 mb-0.5">
+                                <div class="w-2 h-2 rounded-full bg-emerald-400 flex-shrink-0"></div>
+                                <span id="edit-slide13-f4-badge" contenteditable="true" class="text-[8px] font-mono font-bold text-emerald-400 uppercase tracking-wide">Fase 4 • 2028-2029</span>
+                            </div>
+                            <h4 id="edit-slide13-f4-title" contenteditable="true" class="font-bold text-zinc-200 text-[10px] leading-tight">Pivot B2B — Keselamatan Industri</h4>
+                            <p id="edit-slide13-f4-desc" contenteditable="true" class="text-zinc-400 text-[8px] leading-snug">Lisensi software mesh ke industri berisiko tinggi tanpa internet: pertambangan bawah tanah (coal/nickel mine), platform migas lepas pantai, dan eksplorasi kehutanan terpencil.</p>
+                            <div class="mt-auto pt-1.5 border-t border-zinc-800 flex flex-wrap gap-1">
+                                <span class="px-1 py-0.5 bg-emerald-500/10 border border-emerald-500/20 rounded text-[7px] text-emerald-400 font-mono">B2B</span>
+                                <span class="px-1 py-0.5 bg-emerald-500/10 border border-emerald-500/20 rounded text-[7px] text-emerald-400 font-mono">Mining</span>
+                                <span class="px-1 py-0.5 bg-emerald-500/10 border border-emerald-500/20 rounded text-[7px] text-emerald-400 font-mono">K3</span>
+                            </div>
+                        </div>
+
+                        <!-- FASE 5 -->
+                        <div class="relative p-3 bg-zinc-900/50 border border-purple-500/40 rounded-xl flex flex-col gap-1.5 z-10">
+                            <div class="flex items-center gap-1.5 mb-0.5">
+                                <div class="w-2 h-2 rounded-full bg-purple-400 flex-shrink-0"></div>
+                                <span id="edit-slide13-f5-badge" contenteditable="true" class="text-[8px] font-mono font-bold text-purple-400 uppercase tracking-wide">Fase 5 • 2029-2030</span>
+                            </div>
+                            <h4 id="edit-slide13-f5-title" contenteditable="true" class="font-bold text-zinc-200 text-[10px] leading-tight">Akuisisi / IPO / Go Global</h4>
+                            <p id="edit-slide13-f5-desc" contenteditable="true" class="text-zinc-400 text-[8px] leading-snug">Diakuisisi oleh Garmin, Starlink, atau operator telko nasional (Telkomsel/PT Len Industri), atau penawaran saham publik perdana (IPO) sebagai perusahaan teknologi keselamatan nasional.</p>
+                            <div class="mt-auto pt-1.5 border-t border-zinc-800 flex flex-wrap gap-1">
+                                <span class="px-1 py-0.5 bg-purple-500/10 border border-purple-500/20 rounded text-[7px] text-purple-400 font-mono">Exit</span>
+                                <span class="px-1 py-0.5 bg-purple-500/10 border border-purple-500/20 rounded text-[7px] text-purple-400 font-mono">Global</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ARR Target Bar -->
+                    <div class="p-3 bg-zinc-950 border border-zinc-800 rounded-xl">
+                        <div class="flex items-center justify-between mb-2">
+                            <span id="edit-slide13-arr-label" contenteditable="true" class="text-[9px] font-mono font-bold text-zinc-400 uppercase tracking-wider">Target ARR (Annual Recurring Revenue)</span>
+                            <span id="edit-slide13-arr-note" contenteditable="true" class="text-[8px] text-zinc-600">Proyeksi konservatif kumulatif per fase</span>
+                        </div>
+                        <div class="grid grid-cols-5 gap-2">
+                            <div class="flex flex-col items-center gap-1">
+                                <div class="w-full bg-zinc-800 rounded-full h-1.5"><div class="bg-amber-500 h-1.5 rounded-full" style="width:8%"></div></div>
+                                <span id="edit-slide13-arr1" contenteditable="true" class="text-[7px] text-amber-400 font-mono text-center">Rp 0<br>(R&amp;D)</span>
+                            </div>
+                            <div class="flex flex-col items-center gap-1">
+                                <div class="w-full bg-zinc-800 rounded-full h-1.5"><div class="bg-amber-400 h-1.5 rounded-full" style="width:25%"></div></div>
+                                <span id="edit-slide13-arr2" contenteditable="true" class="text-[7px] text-amber-400 font-mono text-center">Rp 1,8M<br>(Jakarta Pilot)</span>
+                            </div>
+                            <div class="flex flex-col items-center gap-1">
+                                <div class="w-full bg-zinc-800 rounded-full h-1.5"><div class="bg-blue-400 h-1.5 rounded-full" style="width:50%"></div></div>
+                                <span id="edit-slide13-arr3" contenteditable="true" class="text-[7px] text-blue-400 font-mono text-center">USD 1,2Jt<br>(NGO SEA)</span>
+                            </div>
+                            <div class="flex flex-col items-center gap-1">
+                                <div class="w-full bg-zinc-800 rounded-full h-1.5"><div class="bg-emerald-400 h-1.5 rounded-full" style="width:75%"></div></div>
+                                <span id="edit-slide13-arr4" contenteditable="true" class="text-[7px] text-emerald-400 font-mono text-center">USD 5Jt<br>(B2B Mining)</span>
+                            </div>
+                            <div class="flex flex-col items-center gap-1">
+                                <div class="w-full bg-zinc-800 rounded-full h-1.5"><div class="bg-purple-400 h-1.5 rounded-full" style="width:100%"></div></div>
+                                <span id="edit-slide13-arr5" contenteditable="true" class="text-[7px] text-purple-400 font-mono text-center">USD 20Jt+<br>(Akuisisi/IPO)</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
