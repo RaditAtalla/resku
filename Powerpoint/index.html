@@ -1262,79 +1262,132 @@
                     </div>
 
                     <!-- Root Cause & Solution Grid Table -->
-                    <div class="grid grid-cols-12 gap-3 items-stretch leading-relaxed">
-                        
-                        <!-- ROW 1: Root Causes (Orange vertical label on left + 3 cards mapping all 6 Root Causes) -->
-                        <div class="col-span-1 bg-[#FC5200] rounded-xl flex items-center justify-center py-4 shadow-md min-h-[125px]">
-                            <span id="edit-slide12-rootcause-vertical" contenteditable="true" class="font-mono font-bold text-white uppercase tracking-widest [writing-mode:vertical-lr] rotate-180 text-center text-[10px]">
-                                Root Cause
-                            </span>
-                        </div>
-                        <div class="col-span-11 grid grid-cols-3 gap-3">
-                            <!-- Card 1 (1A & 2A) -->
-                            <div class="p-3 bg-white border border-[#FC5200]/70 rounded-xl text-zinc-800 shadow-sm flex flex-col justify-center">
-                                <h4 id="edit-slide12-rc-title1" contenteditable="true" class="font-bold text-xs text-[#FC5200] mb-1.5 uppercase tracking-wide">
-                                    1A & 2A. Putusnya Komunikasi
+                    <div class="flex flex-col gap-3 leading-relaxed">
+
+                        <!-- ROW 1: Root Causes - 6 kartu individual persis seperti Problem Statement -->
+                        <div class="grid grid-cols-13 gap-2 items-stretch" style="grid-template-columns: 2.5rem 1fr 1fr 1fr 1fr 1fr 1fr;">
+                            <!-- Label Vertikal Root Cause -->
+                            <div class="bg-[#FC5200] rounded-xl flex items-center justify-center shadow-md">
+                                <span id="edit-slide12-rootcause-vertical" contenteditable="true" class="font-mono font-bold text-white uppercase tracking-widest [writing-mode:vertical-lr] rotate-180 text-center text-[9px]">
+                                    Root Cause
+                                </span>
+                            </div>
+
+                            <!-- 1A. Putusnya Infrastruktur Telekomunikasi -->
+                            <div class="p-2.5 bg-white border-l-4 border-[#FC5200] rounded-xl text-zinc-800 shadow-sm flex flex-col justify-center">
+                                <div class="text-[8px] font-mono font-bold text-[#FC5200]/70 mb-0.5">1A</div>
+                                <h4 id="edit-slide12-rc-title-1a" contenteditable="true" class="font-bold text-[9px] text-[#FC5200] mb-1 uppercase tracking-wide leading-tight">
+                                    Putusnya Infrastruktur Telekomunikasi
                                 </h4>
-                                <p id="edit-slide12-rc-desc1" contenteditable="true" class="text-[9px] text-zinc-600">
-                                    Kerusakan menara BTS dan serat optik akibat gempa, serta pemadaman listrik massal yang mematikan baterai cadangan BTS dalam sekejap.
+                                <p id="edit-slide12-rc-desc-1a" contenteditable="true" class="text-[8px] text-zinc-600 leading-snug">
+                                    Gempa meruntuhkan menara BTS dan memutus serat optik secara fisik.
                                 </p>
                             </div>
-                            <!-- Card 2 (1B & 2B) -->
-                            <div class="p-3 bg-white border border-[#FC5200]/70 rounded-xl text-zinc-800 shadow-sm flex flex-col justify-center">
-                                <h4 id="edit-slide12-rc-title2" contenteditable="true" class="font-bold text-xs text-[#FC5200] mb-1.5 uppercase tracking-wide">
-                                    1B & 2B. Hambatan Triage
+
+                            <!-- 2A. Pemadaman Listrik Massal -->
+                            <div class="p-2.5 bg-white border-l-4 border-[#FC5200] rounded-xl text-zinc-800 shadow-sm flex flex-col justify-center">
+                                <div class="text-[8px] font-mono font-bold text-[#FC5200]/70 mb-0.5">2A</div>
+                                <h4 id="edit-slide12-rc-title-2a" contenteditable="true" class="font-bold text-[9px] text-[#FC5200] mb-1 uppercase tracking-wide leading-tight">
+                                    Pemadaman Listrik Massal
                                 </h4>
-                                <p id="edit-slide12-rc-desc2" contenteditable="true" class="text-[9px] text-zinc-600">
-                                    Tim SAR mencari korban tanpa koordinat rill (blind search) dan ketiadaan internet lokal menghambat sinkronisasi status medis darurat.
+                                <p id="edit-slide12-rc-desc-2a" contenteditable="true" class="text-[8px] text-zinc-600 leading-snug">
+                                    Baterai cadangan BTS habis dalam jam pertama tanpa sumber daya pengganti.
                                 </p>
                             </div>
-                            <!-- Card 3 (3A & 3B) -->
-                            <div class="p-3 bg-white border border-[#FC5200]/70 rounded-xl text-zinc-800 shadow-sm flex flex-col justify-center">
-                                <h4 id="edit-slide12-rc-title3" contenteditable="true" class="font-bold text-xs text-[#FC5200] mb-1.5 uppercase tracking-wide">
-                                    3A & 3B. Isolasi & Informasi Hoaks
+
+                            <!-- 3A. Blind Search SAR -->
+                            <div class="p-2.5 bg-white border-l-4 border-[#FC5200] rounded-xl text-zinc-800 shadow-sm flex flex-col justify-center">
+                                <div class="text-[8px] font-mono font-bold text-[#FC5200]/70 mb-0.5">3A</div>
+                                <h4 id="edit-slide12-rc-title-3a" contenteditable="true" class="font-bold text-[9px] text-[#FC5200] mb-1 uppercase tracking-wide leading-tight">
+                                    Blind Search SAR
                                 </h4>
-                                <p id="edit-slide12-rc-desc3" contenteditable="true" class="text-[9px] text-zinc-600">
-                                    Titik buta geografis menciptakan blank spot total, serta rute evakuasi resmi yang simpang siur memicu rumor atau berita hoaks.
+                                <p id="edit-slide12-rc-desc-3a" contenteditable="true" class="text-[8px] text-zinc-600 leading-snug">
+                                    Tim SAR mencari korban tanpa koordinat real-time — murni mengandalkan visual.
+                                </p>
+                            </div>
+
+                            <!-- 1B. Ketiadaan Internet Lokal -->
+                            <div class="p-2.5 bg-white border-l-4 border-[#FC5200] rounded-xl text-zinc-800 shadow-sm flex flex-col justify-center">
+                                <div class="text-[8px] font-mono font-bold text-[#FC5200]/70 mb-0.5">1B</div>
+                                <h4 id="edit-slide12-rc-title-1b" contenteditable="true" class="font-bold text-[9px] text-[#FC5200] mb-1 uppercase tracking-wide leading-tight">
+                                    Ketiadaan Internet Lokal
+                                </h4>
+                                <p id="edit-slide12-rc-desc-1b" contenteditable="true" class="text-[8px] text-zinc-600 leading-snug">
+                                    Sinkronisasi data medis darurat terhenti total karena tidak ada jaringan lokal.
+                                </p>
+                            </div>
+
+                            <!-- 2B. Titik Buta Geografis -->
+                            <div class="p-2.5 bg-white border-l-4 border-[#FC5200] rounded-xl text-zinc-800 shadow-sm flex flex-col justify-center">
+                                <div class="text-[8px] font-mono font-bold text-[#FC5200]/70 mb-0.5">2B</div>
+                                <h4 id="edit-slide12-rc-title-2b" contenteditable="true" class="font-bold text-[9px] text-[#FC5200] mb-1 uppercase tracking-wide leading-tight">
+                                    Titik Buta Geografis
+                                </h4>
+                                <p id="edit-slide12-rc-desc-2b" contenteditable="true" class="text-[8px] text-zinc-600 leading-snug">
+                                    Daerah terisolir menciptakan blank spot total yang tidak terjangkau tim manapun.
+                                </p>
+                            </div>
+
+                            <!-- 3B. Informasi Simpang Siur & Hoaks -->
+                            <div class="p-2.5 bg-white border-l-4 border-[#FC5200] rounded-xl text-zinc-800 shadow-sm flex flex-col justify-center">
+                                <div class="text-[8px] font-mono font-bold text-[#FC5200]/70 mb-0.5">3B</div>
+                                <h4 id="edit-slide12-rc-title-3b" contenteditable="true" class="font-bold text-[9px] text-[#FC5200] mb-1 uppercase tracking-wide leading-tight">
+                                    Informasi Simpang Siur & Hoaks
+                                </h4>
+                                <p id="edit-slide12-rc-desc-3b" contenteditable="true" class="text-[8px] text-zinc-600 leading-snug">
+                                    Rute evakuasi resmi yang membingungkan memicu rumor dan kepanikan massa.
                                 </p>
                             </div>
                         </div>
 
-                        <!-- ROW 2: Solutions (Orange vertical label on left + 3 cards mapping to the Root Causes directly above) -->
-                        <div class="col-span-1 bg-amber-500 rounded-xl flex items-center justify-center py-4 shadow-md min-h-[125px]">
-                            <span id="edit-slide12-solution-vertical" contenteditable="true" class="font-mono font-bold text-zinc-950 uppercase tracking-widest [writing-mode:vertical-lr] rotate-180 text-center text-[10px]">
-                                Solution
-                            </span>
+                        <!-- Garis penghubung visual antara Root Cause dan Solution -->
+                        <div class="flex items-center gap-1 pl-10">
+                            <div class="flex-1 h-px bg-zinc-700/50"></div>
+                            <span class="text-[8px] text-zinc-500 font-mono px-2">RESKU menjawab</span>
+                            <div class="flex-1 h-px bg-zinc-700/50"></div>
                         </div>
-                        <div class="col-span-11 grid grid-cols-3 gap-3">
-                            <!-- Card 1 Solution (maps to 1A & 2A) -->
-                            <div class="p-3 bg-white border border-amber-500 rounded-xl text-zinc-800 shadow-sm flex flex-col justify-center">
-                                <h4 id="edit-slide12-sol-title1" contenteditable="true" class="font-bold text-xs text-amber-600 mb-1.5 uppercase tracking-wide">
+
+                        <!-- ROW 2: Solutions - 3 kartu, masing-masing merespons pasangan root cause di atas -->
+                        <div class="grid gap-2 items-stretch" style="grid-template-columns: 2.5rem 1fr 1fr 1fr;">
+                            <!-- Label Vertikal Solution -->
+                            <div class="bg-amber-500 rounded-xl flex items-center justify-center shadow-md">
+                                <span id="edit-slide12-solution-vertical" contenteditable="true" class="font-mono font-bold text-zinc-950 uppercase tracking-widest [writing-mode:vertical-lr] rotate-180 text-center text-[9px]">
+                                    Solution
+                                </span>
+                            </div>
+
+                            <!-- Solusi 1: Menjawab 1A + 2A -->
+                            <div class="p-3 bg-white border-l-4 border-amber-500 rounded-xl text-zinc-800 shadow-sm flex flex-col justify-center">
+                                <div class="text-[8px] font-mono font-bold text-amber-500/70 mb-0.5">Menjawab 1A + 2A</div>
+                                <h4 id="edit-slide12-sol-title1" contenteditable="true" class="font-bold text-[9px] text-amber-600 mb-1.5 uppercase tracking-wide leading-tight">
                                     Ad-Hoc BLE Mesh Network
                                 </h4>
-                                <p id="edit-slide12-sol-desc1" contenteditable="true" class="text-[9px] text-zinc-600">
-                                    Smartphone korban saling terhubung membentuk jaringan mandiri penyebar data status darurat tanpa internet seluler.
+                                <p id="edit-slide12-sol-desc1" contenteditable="true" class="text-[8px] text-zinc-600 leading-snug">
+                                    Smartphone korban saling terhubung membentuk jaringan mandiri penyebar data status darurat tanpa infrastruktur seluler maupun listrik PLN.
                                 </p>
                             </div>
-                            <!-- Card 2 Solution (maps to 1B & 2B) -->
-                            <div class="p-3 bg-white border border-amber-500 rounded-xl text-zinc-800 shadow-sm flex flex-col justify-center">
-                                <h4 id="edit-slide12-sol-title2" contenteditable="true" class="font-bold text-xs text-amber-600 mb-1.5 uppercase tracking-wide">
-                                    Real-Time Triage & Sync
+
+                            <!-- Solusi 2: Menjawab 3A + 1B -->
+                            <div class="p-3 bg-white border-l-4 border-amber-500 rounded-xl text-zinc-800 shadow-sm flex flex-col justify-center">
+                                <div class="text-[8px] font-mono font-bold text-amber-500/70 mb-0.5">Menjawab 3A + 1B</div>
+                                <h4 id="edit-slide12-sol-title2" contenteditable="true" class="font-bold text-[9px] text-amber-600 mb-1.5 uppercase tracking-wide leading-tight">
+                                    Real-Time Triage & Passive Sync
                                 </h4>
-                                <p id="edit-slide12-sol-desc2" contenteditable="true" class="text-[9px] text-zinc-600">
-                                    Formulir triage offline untuk pengumpulan status medis korban secara massal melalui scan pasif petugas/drone di lapangan.
+                                <p id="edit-slide12-sol-desc2" contenteditable="true" class="text-[8px] text-zinc-600 leading-snug">
+                                    Formulir triage offline merekam koordinat dan status medis korban; relawan/drone menyinkronkan data secara pasif saat melintas di area.
                                 </p>
                             </div>
-                            <!-- Card 3 Solution (maps to 3A & 3B) -->
-                            <div class="p-3 bg-white border border-amber-500 rounded-xl text-zinc-800 shadow-sm flex flex-col justify-center relative">
-                                <h4 id="edit-slide12-sol-title3" contenteditable="true" class="font-bold text-xs text-amber-600 mb-1.5 uppercase tracking-wide">
-                                    Command Center Insights
+
+                            <!-- Solusi 3: Menjawab 2B + 3B -->
+                            <div class="p-3 bg-white border-l-4 border-amber-500 rounded-xl text-zinc-800 shadow-sm flex flex-col justify-center relative">
+                                <div class="text-[8px] font-mono font-bold text-amber-500/70 mb-0.5">Menjawab 2B + 3B</div>
+                                <h4 id="edit-slide12-sol-title3" contenteditable="true" class="font-bold text-[9px] text-amber-600 mb-1.5 uppercase tracking-wide leading-tight">
+                                    Tactical Map & Local AI DSS
                                 </h4>
-                                <p id="edit-slide12-sol-desc3" contenteditable="true" class="text-[9px] text-zinc-600">
-                                    Peta taktis offline (OSM) dan AI lokal untuk rekomendasi evakuasi medis, alokasi logistik, serta penyebaran rute evakuasi resmi.
+                                <p id="edit-slide12-sol-desc3" contenteditable="true" class="text-[8px] text-zinc-600 leading-snug">
+                                    Peta OSM offline + AI lokal menyajikan rute evakuasi resmi dan rekomendasi logistik kepada posko — eliminasi blank spot informasi.
                                 </p>
-                                
-                                <!-- Mascot Molee in the bottom right corner of the slide -->
+                                <!-- Mascot Molee -->
                                 <div class="absolute right-[-14px] bottom-[-14px] w-14 h-14 pointer-events-none select-none z-20">
                                     <img src="../svg/svg/molee.svg" class="w-full h-full object-contain" alt="Mascot Molee" />
                                 </div>
