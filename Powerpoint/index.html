@@ -522,27 +522,45 @@
                     
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
                         <!-- BLE Loop Info -->
-                        <div class="p-4 bg-zinc-900/40 border border-zinc-800 rounded-xl">
-                            <h4 id="edit-slide3-tech1-title" contenteditable="true" class="font-bold text-xs uppercase tracking-wider text-amber-500 mb-2">Dynamic Role-Switching</h4>
-                            <p id="edit-slide3-tech1-desc" contenteditable="true" class="text-xs text-zinc-400 leading-relaxed">
-                                Mengatasi batasan platform iOS/Android dengan membagi siklus kerja BLE secara ketat: 10 detik memancarkan data (Peripheral) dan 5 detik memindai peer (Central). Menjamin pertukaran data dua arah tanpa gangguan koneksi terus-menerus.
-                            </p>
+                        <div class="p-4 bg-zinc-900/40 border border-zinc-800 rounded-xl flex flex-col justify-between">
+                            <div>
+                                <h4 id="edit-slide3-tech1-title" contenteditable="true" class="font-bold text-xs uppercase tracking-wider text-amber-500 mb-2">Dynamic Role-Switching</h4>
+                                <p id="edit-slide3-tech1-desc" contenteditable="true" class="text-xs text-zinc-400 leading-relaxed">
+                                    Mengatasi batasan platform iOS/Android dengan membagi siklus kerja BLE secara ketat: 10 detik memancarkan data (Peripheral) dan 5 detik memindai peer (Central). Menjamin pertukaran data dua arah tanpa gangguan koneksi terus-menerus.
+                                </p>
+                            </div>
+                            <div class="mt-3 pt-2 border-t border-zinc-800/60 text-[10px] text-amber-400">
+                                <span class="font-bold uppercase tracking-wider block mb-0.5">Novelty:</span>
+                                memecahkan restriksi background BLE iOS/Android secara dinamis dan bi-directional tanpa interaksi user.
+                            </div>
                         </div>
                         
                         <!-- Routing Info -->
-                        <div class="p-4 bg-zinc-900/40 border border-zinc-800 rounded-xl">
-                            <h4 id="edit-slide3-tech2-title" contenteditable="true" class="font-bold text-xs uppercase tracking-wider text-amber-500 mb-2">Epidemic Routing & LUV</h4>
-                            <p id="edit-slide3-tech2-desc" contenteditable="true" class="text-xs text-zinc-400 leading-relaxed">
-                                Menggunakan *Latest Update Vector* (LUV) untuk mencocokkan riwayat pesan antar perangkat. Hanya menyinkronkan selisih (delta) data baru guna menghemat *throughput* transmisi BLE yang terbatas dan menjaga efisiensi baterai.
-                            </p>
+                        <div class="p-4 bg-zinc-900/40 border border-zinc-800 rounded-xl flex flex-col justify-between">
+                            <div>
+                                <h4 id="edit-slide3-tech2-title" contenteditable="true" class="font-bold text-xs uppercase tracking-wider text-amber-500 mb-2">Epidemic Routing & LUV</h4>
+                                <p id="edit-slide3-tech2-desc" contenteditable="true" class="text-xs text-zinc-400 leading-relaxed">
+                                    Menggunakan *Latest Update Vector* (LUV) untuk mencocokkan riwayat pesan antar perangkat. Hanya menyinkronkan selisih (delta) data baru guna menghemat *throughput* transmisi BLE yang terbatas dan menjaga efisiensi baterai.
+                                </p>
+                            </div>
+                            <div class="mt-3 pt-2 border-t border-zinc-800/60 text-[10px] text-amber-400">
+                                <span class="font-bold uppercase tracking-wider block mb-0.5">Novelty:</span>
+                                Sinkronisasi pesan hanya mengirimkan selisih data (delta) terkecil, memotong beban bandwidth BLE hingga 80%.
+                            </div>
                         </div>
                         
                         <!-- Novelty Info -->
-                        <div class="p-4 bg-zinc-900/40 border border-zinc-800 rounded-xl">
-                            <h4 id="edit-slide3-tech3-title" contenteditable="true" class="font-bold text-xs uppercase tracking-wider text-amber-500 mb-2">Local AI Decision Support</h4>
-                            <p id="edit-slide3-tech3-desc" contenteditable="true" class="text-xs text-zinc-400 leading-relaxed">
-                                AI lokal berbasis Small Language Model (SLM) terkuantisasi (ringan, RAM kecil, tanpa GPU tinggi). Berfungsi menganalisis kepadatan penduduk, estimasi logistik/material darurat, biaya operasional (RAB), dan karakteristik medan longsor/banjir secara 100% offline untuk membantu pengambilan keputusan taktis tim SAR.
-                            </p>
+                        <div class="p-4 bg-zinc-900/40 border border-zinc-800 rounded-xl flex flex-col justify-between">
+                            <div>
+                                <h4 id="edit-slide3-tech3-title" contenteditable="true" class="font-bold text-xs uppercase tracking-wider text-amber-500 mb-2">Local AI Decision Support</h4>
+                                <p id="edit-slide3-tech3-desc" contenteditable="true" class="text-xs text-zinc-400 leading-relaxed">
+                                    AI lokal berbasis Small Language Model (SLM) terkuantisasi (ringan, RAM kecil, tanpa GPU tinggi). Berfungsi menganalisis kepadatan penduduk, estimasi logistik/material darurat, biaya operasional (RAB), dan karakteristik medan longsor/banjir secara 100% offline untuk membantu pengambilan keputusan taktis tim SAR.
+                                </p>
+                            </div>
+                            <div class="mt-3 pt-2 border-t border-zinc-800/60 text-[10px] text-amber-400">
+                                <span class="font-bold uppercase tracking-wider block mb-0.5">Novelty:</span>
+                                Perumusan RAB, logistik, & analisis taktis medan bencana secara 100% offline via SLM lokal di posko darurat.
+                            </div>
                         </div>
                     </div>
 
@@ -621,14 +639,137 @@
                     </div>
                 </div>
 
-                <!-- SLIDE 7: Value Proposition Canvas -->
-                <div id="slide-6" class="slide w-full flex-col justify-center gap-6">
-                    <div class="border-b border-zinc-800 pb-4">
-                        <h2 id="edit-slide5-header" contenteditable="true" class="font-title font-bold text-3xl text-amber-500">5. Value Proposition Canvas (VPC)</h2>
-                        <p id="edit-slide5-subheader" contenteditable="true" class="text-sm text-zinc-400 mt-1">Penyelarasan kebutuhan pengguna bencana dengan fungsionalitas produk Resku</p>
+                <!-- SLIDE 7: Value Proposition Canvas & Empathy Map -->
+                <div id="slide-6" class="slide w-full flex-col justify-center gap-4">
+                    <div class="flex items-center justify-between border-b border-zinc-800 pb-3 mb-2">
+                        <div>
+                            <h2 id="edit-slide5-header" contenteditable="true" class="font-title font-bold text-2xl text-amber-500">5. Empathy Map & Value Proposition Canvas</h2>
+                            <p id="edit-slide5-subheader" contenteditable="true" class="text-xs text-zinc-400 mt-1">Penyelarasan empati korban bencana dengan solusi ekosistem Resku</p>
+                        </div>
+                        <!-- Toggle Tab Buttons -->
+                        <div class="flex bg-zinc-950 border border-zinc-800 p-1 rounded-lg text-[10px] font-mono">
+                            <button id="btn-vpc-visual" onclick="toggleVpcView('visual')" class="px-3 py-1.5 rounded bg-amber-500 text-zinc-950 font-bold transition-all">Visual Canvas</button>
+                            <button id="btn-vpc-text" onclick="toggleVpcView('text')" class="px-3 py-1.5 rounded text-zinc-400 hover:text-zinc-200 transition-all">Text Summary</button>
+                        </div>
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-2 text-xs">
+                    <!-- VIEW 1: Visual Canvas (default) -->
+                    <div id="vpc-visual-container" class="flex flex-col gap-4 text-[9px] leading-relaxed">
+                        <!-- Top: Empathy Map Row -->
+                        <div class="grid grid-cols-12 gap-3 items-stretch">
+                            <!-- Left: Empathy Map Illustration/Header (Col Span 4) -->
+                            <div class="col-span-4 bg-zinc-950/80 border border-zinc-850 p-3 rounded-xl flex flex-col justify-between relative overflow-hidden min-h-[160px]">
+                                <div class="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(245,158,11,0.03),transparent_60%)] pointer-events-none"></div>
+                                <div class="flex justify-between items-center z-10 border-b border-zinc-900 pb-2">
+                                    <span class="font-bold text-amber-500 font-mono uppercase tracking-wider">EMPATHY MAP</span>
+                                    <span class="material-symbols-outlined text-xs text-amber-500 animate-pulse">psychology</span>
+                                </div>
+                                <!-- Visual Head Silhouette Diagram -->
+                                <div class="flex-1 flex items-center justify-center p-2 z-10">
+                                    <svg class="h-20 w-24 text-zinc-700 fill-current opacity-80" viewBox="0 0 120 100">
+                                        <!-- Head silhouette -->
+                                        <path d="M 60 10 C 45 10, 35 20, 35 35 C 35 45, 30 50, 30 55 C 30 60, 40 65, 45 65 C 45 75, 50 85, 60 85 C 70 85, 75 75, 75 65 C 80 65, 90 60, 90 55 C 90 50, 85 45, 85 35 C 85 20, 75 10, 60 10 Z" stroke="#3f3f46" stroke-width="1.5" />
+                                        <!-- Brain Core highlight -->
+                                        <circle cx="60" cy="38" r="8" fill="rgba(245,158,11,0.15)" stroke="#f59e0b" stroke-width="1" class="pulse-ring-effect" />
+                                        <!-- Lines extending to sides -->
+                                        <path d="M 30 35 L 10 35 M 90 35 L 110 35 M 35 60 L 15 70 M 85 60 L 105 70 M 60 10 L 60 2" fill="none" stroke="#27272a" stroke-width="1" stroke-dasharray="2 2" />
+                                    </svg>
+                                </div>
+                                <div class="text-[8px] text-zinc-500 font-mono leading-none z-10">Target: Korban bencana & relawan SAR lapangan.</div>
+                            </div>
+
+                            <!-- Right: Empathy Map Cards Grid (Col Span 8) -->
+                            <div class="col-span-8 grid grid-cols-2 gap-3">
+                                <!-- Card 1: Who are we empathizing with? -->
+                                <div class="p-3 bg-zinc-900/30 border border-zinc-850 rounded-xl flex flex-col justify-between">
+                                    <div>
+                                        <span class="font-bold text-amber-500 uppercase tracking-wider block mb-1">1. Who are we empathizing with?</span>
+                                        <p id="edit-slide5-v-empathy1" contenteditable="true" class="text-zinc-400">Penyintas bencana di wilayah terisolasi (blank spot total) dan tim SAR yang berpacu dengan waktu evakuasi.</p>
+                                    </div>
+                                </div>
+                                <!-- Card 2: What do they need to Do? -->
+                                <div class="p-3 bg-zinc-900/30 border border-zinc-850 rounded-xl flex flex-col justify-between">
+                                    <div>
+                                        <span class="font-bold text-amber-500 uppercase tracking-wider block mb-1">2. What do they need to Do?</span>
+                                        <p id="edit-slide5-v-empathy2" contenteditable="true" class="text-zinc-400">Korban perlu mengirimkan status triage medis & koordinat lokasi, dan SAR perlu memetakan penyintas secara akurat.</p>
+                                    </div>
+                                </div>
+                                <!-- Card 3: What do they Hear & See? -->
+                                <div class="p-3 bg-zinc-900/30 border border-zinc-850 rounded-xl flex flex-col justify-between">
+                                    <div>
+                                        <span class="font-bold text-rose-500 uppercase tracking-wider block mb-1">3. What do they Hear & See?</span>
+                                        <p id="edit-slide5-v-empathy3" contenteditable="true" class="text-zinc-400">Melihat BTS hancur, pemadaman listrik massal, kekacauan fisik. Mendengar hoaks evakuasi & kepanikan warga sekitar.</p>
+                                    </div>
+                                </div>
+                                <!-- Card 4: THINK & FEEL (Pains & Gains) -->
+                                <div class="p-3 bg-zinc-900/30 border border-zinc-850 rounded-xl flex flex-col justify-between">
+                                    <div>
+                                        <span class="font-bold text-emerald-500 uppercase tracking-wider block mb-1">4. Think & Feel (Pains & Gains)</span>
+                                        <p id="edit-slide5-v-empathy4" contenteditable="true" class="text-zinc-400">Takut baterai HP habis, cemas nasib keluarga. Mengharapkan triase medis cepat, rute evakuasi offline, dan data valid.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Bottom: Value Proposition Canvas Row -->
+                        <div class="grid grid-cols-12 gap-3 items-stretch">
+                            <!-- Left: Value Map (Col Span 5) -->
+                            <div class="col-span-5 bg-zinc-950/40 border-2 border-amber-500/20 rounded-2xl p-3 flex flex-col justify-between space-y-2.5 relative shadow-lg">
+                                <div class="absolute top-2 right-3 font-mono text-[8px] font-bold text-amber-500 flex items-center gap-1">
+                                    <span class="material-symbols-outlined text-[10px]">bolt</span> VALUE MAP
+                                </div>
+                                <div>
+                                    <span class="font-bold text-amber-500 block mb-0.5">Products & Services:</span>
+                                    <p id="edit-slide5-v-products" contenteditable="true" class="text-zinc-400">Aplikasi Survivor (BLE Mesh), Collector (Data Mule), & Command Center Dashboard.</p>
+                                </div>
+                                <div>
+                                    <span class="font-bold text-rose-500 block mb-0.5">Pain Relievers:</span>
+                                    <p id="edit-slide5-v-relievers" contenteditable="true" class="text-zinc-400">BLE role-switching hemat baterai (72 jam), tanda tangan enkripsi anti-hoaks, & triase otomatis.</p>
+                                </div>
+                                <div>
+                                    <span class="font-bold text-emerald-500 block mb-0.5">Gain Creators:</span>
+                                    <p id="edit-slide5-v-creators" contenteditable="true" class="text-zinc-400">Rute evakuasi diatur AI lokal offline, peta taktis offline, & panduan medis P3K offline.</p>
+                                </div>
+                            </div>
+
+                            <!-- Center: Fit Connector (Col Span 2) -->
+                            <div class="col-span-2 flex flex-col items-center justify-center relative min-h-[140px]">
+                                <svg class="absolute inset-0 w-full h-full text-amber-500/40" viewBox="0 0 100 100" preserveAspectRatio="none">
+                                    <path d="M 0 50 L 100 50" stroke="currentColor" stroke-width="1.5" stroke-dasharray="3 3" />
+                                </svg>
+                                <div class="h-10 w-10 bg-amber-500 border-2 border-white rounded-full flex items-center justify-center shadow-xl z-10 animate-pulse">
+                                    <span class="font-title font-black text-zinc-950 text-xs tracking-wider">FIT!</span>
+                                </div>
+                            </div>
+
+                            <!-- Right: Customer Profile (Col Span 5) -->
+                            <div class="col-span-5 bg-zinc-950/40 border-2 border-[#FC5200]/20 rounded-2xl p-3 flex flex-col justify-between space-y-2.5 relative shadow-lg">
+                                <div class="absolute top-2 right-3 font-mono text-[8px] font-bold text-[#FC5200] flex items-center gap-1">
+                                    <span class="material-symbols-outlined text-[10px]">person</span> CUSTOMER PROFILE
+                                </div>
+                                <div>
+                                    <span class="font-bold text-amber-500 block mb-0.5">Customer Jobs:</span>
+                                    <p id="edit-slide5-v-jobs" contenteditable="true" class="text-zinc-400">Melaporkan titik koordinat darurat, status kesehatan instan, & memetakan koordinat bencana.</p>
+                                </div>
+                                <div>
+                                    <span class="font-bold text-rose-500 block mb-0.5">Pains (Kendala):</span>
+                                    <p id="edit-slide5-v-pains" contenteditable="true" class="text-zinc-400">Kehilangan daya baterai cepat, kepungan berita hoaks, lamanya pencarian korban manual.</p>
+                                </div>
+                                <div>
+                                    <span class="font-bold text-emerald-500 block mb-0.5">Gains (Harapan):</span>
+                                    <p id="edit-slide5-v-gains" contenteditable="true" class="text-zinc-400">Pertolongan triage medis lebih awal, instruksi titik evakuasi valid, & rute navigasi offline.</p>
+                                </div>
+
+                                <!-- Mascot Molee in hardhat (glowing bottom right) -->
+                                <div class="absolute right-[-15px] bottom-[-15px] w-14 h-14 pointer-events-none select-none z-20">
+                                    <img src="../svg/svg/molee.svg" class="w-full h-full object-contain filter drop-shadow-[0_4px_6px_rgba(252,82,0,0.3)]" alt="Mole Mascot" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- VIEW 2: Text Summary (Original columns) -->
+                    <div id="vpc-text-container" class="hidden grid grid-cols-1 md:grid-cols-2 gap-6 mt-2 text-xs">
                         <!-- Customer Segment (Disaster Survivor & Rescuer) -->
                         <div class="p-5 bg-zinc-900/40 border border-zinc-800 rounded-2xl space-y-4">
                             <h3 id="edit-slide5-seg-title" contenteditable="true" class="text-sm font-bold text-zinc-200 border-b border-zinc-800 pb-2 flex items-center gap-2">
@@ -848,7 +989,7 @@
                                 <div class="font-bold text-zinc-100 mb-1 flex items-center gap-1">
                                     <span class="material-symbols-outlined text-[12px] text-amber-500">payments</span> Cost Structure
                                 </div>
-                                <p class="text-zinc-400">R&D Software, Infrastruktur Server AI, Produksi Hardware Beacon/Drones, Pelatihan Lapangan & Sertifikasi Relawan.</p>
+                                <p class="text-zinc-400">R&D Software, Optimalisasi AI Lokal (Offline), Produksi Hardware Beacon/Drones, Pelatihan Lapangan & Sertifikasi Relawan.</p>
                             </div>
                         </div>
 
@@ -1098,45 +1239,107 @@
                     </div>
                 </div>
 
+                
                 <!-- SLIDE 15: Resku Impact 2026 -->
-                <div id="slide-14" class="slide w-full flex-col justify-center gap-6">
-                    <div class="border-b border-zinc-800 pb-4">
-                        <h2 id="edit-slide12-header" contenteditable="true" class="font-title font-bold text-3xl text-amber-500">12. Dampak Resku (Impact 2026)</h2>
-                        <p id="edit-slide12-subheader" contenteditable="true" class="text-sm text-zinc-400 mt-1">Target dampak sosial dan pertumbuhan bisnis pada akhir tahun 2026</p>
+                <div id="slide-14" class="slide w-full flex-col justify-center gap-4 text-[10px]">
+                    <!-- Slide Header Title -->
+                    <div class="border-b border-zinc-800 pb-3 mb-2 flex items-center justify-between">
+                        <h2 id="edit-slide12-header" contenteditable="true" class="font-title font-bold text-3xl text-[#FC5200]">
+                            12. RESKU Impact 2026: Transforming Emergency Communications & Disaster Relief
+                        </h2>
+                        <div class="flex items-center gap-2">
+                            <span class="material-symbols-outlined text-amber-500 text-xl">sensors</span>
+                            <span class="font-title font-bold text-sm text-zinc-100">RESKU</span>
+                        </div>
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-2 text-xs">
-                        <!-- Social Impact -->
-                        <div class="p-5 bg-zinc-900/40 border border-zinc-800 rounded-xl flex flex-col justify-between">
-                            <div>
-                                <span class="material-symbols-outlined text-emerald-500 text-4xl mb-2">volunteer_activism</span>
-                                <h3 id="edit-slide12-soc-title" contenteditable="true" class="font-bold text-zinc-100 text-sm mb-2">Dampak Sosial & Kemanusiaan</h3>
-                                <ul id="edit-slide12-soc-list" contenteditable="true" class="text-zinc-400 space-y-2 leading-relaxed">
-                                    <li>• Menyelamatkan ratusan nyawa dalam masa kritis 72 jam pertama pasca-bencana.</li>
-                                    <li>• Mengurangi waktu pencarian tim SAR sebesar 35% menggunakan asisten cerdas Local AI DSS.</li>
-                                    <li>• Mendistribusikan informasi keselamatan resmi terenkripsi bebas hoaks ke 100.000+ perangkat mesh warga.</li>
-                                </ul>
+                    <!-- Orange Target Statement Banner -->
+                    <div class="w-full bg-[#FC5200] py-3.5 px-6 rounded-xl text-center shadow-lg mb-2 relative overflow-hidden">
+                        <p id="edit-slide12-target-statement" contenteditable="true" class="text-white text-xs lg:text-sm font-bold tracking-wide">
+                            Pada tahun 2026, Resku menargetkan untuk melatih lebih dari 7500 relawan dan menyebarkan perangkat mesh ad-hoc di wilayah rawan bencana Indonesia demi meniadakan blank spot komunikasi.
+                        </p>
+                    </div>
+
+                    <!-- Root Cause & Solution Grid Table -->
+                    <div class="grid grid-cols-12 gap-3 items-stretch leading-relaxed">
+                        
+                        <!-- ROW 1: Root Causes (Orange vertical label on left + 3 cards) -->
+                        <div class="col-span-1 bg-[#FC5200] rounded-xl flex items-center justify-center py-4 shadow-md min-h-[120px]">
+                            <span id="edit-slide12-rootcause-vertical" contenteditable="true" class="font-mono font-bold text-white uppercase tracking-widest [writing-mode:vertical-lr] rotate-180 text-center text-[10px]">
+                                Root Cause
+                            </span>
+                        </div>
+                        <div class="col-span-11 grid grid-cols-3 gap-3">
+                            <!-- Card 1 -->
+                            <div class="p-3 bg-white border border-[#FC5200]/70 rounded-xl text-zinc-800 shadow-sm flex flex-col justify-center">
+                                <h4 id="edit-slide12-rc-title1" contenteditable="true" class="font-bold text-xs text-[#FC5200] mb-1.5 uppercase tracking-wide">
+                                    Communication Access Gap
+                                </h4>
+                                <p id="edit-slide12-rc-desc1" contenteditable="true" class="text-[9px] text-zinc-600">
+                                    Kurangnya infrastruktur komunikasi darurat mandiri dan tingginya biaya sewa telepon satelit komersial saat bencana.
+                                </p>
                             </div>
-                            <div id="edit-slide12-soc-footer" contenteditable="true" class="mt-4 pt-4 border-t border-zinc-850 text-emerald-400 font-mono font-bold text-right text-[10px]">
-                                Target 2026: Zero Communication Blackout
+                            <!-- Card 2 -->
+                            <div class="p-3 bg-white border border-[#FC5200]/70 rounded-xl text-zinc-800 shadow-sm flex flex-col justify-center">
+                                <h4 id="edit-slide12-rc-title2" contenteditable="true" class="font-bold text-xs text-[#FC5200] mb-1.5 uppercase tracking-wide">
+                                    Traditional Rescue Methods
+                                </h4>
+                                <p id="edit-slide12-rc-desc2" contenteditable="true" class="text-[9px] text-zinc-600">
+                                    90% pencarian korban di lapangan berjalan lambat akibat ketiadaan koordinasi data dan triase rill secara real-time.
+                                </p>
+                            </div>
+                            <!-- Card 3 -->
+                            <div class="p-3 bg-white border border-[#FC5200]/70 rounded-xl text-zinc-800 shadow-sm flex flex-col justify-center">
+                                <h4 id="edit-slide12-rc-title3" contenteditable="true" class="font-bold text-xs text-[#FC5200] mb-1.5 uppercase tracking-wide">
+                                    Information Isolation
+                                </h4>
+                                <p id="edit-slide12-rc-desc3" contenteditable="true" class="text-[9px] text-zinc-600">
+                                    Masyarakat terisolasi di blank spot tidak memiliki rute evakuasi resmi dan rentan kepanikan akibat kesimpangsiuran berita.
+                                </p>
                             </div>
                         </div>
 
-                        <!-- Business Impact -->
-                        <div class="p-5 bg-zinc-900/40 border border-zinc-800 rounded-xl flex flex-col justify-between">
-                            <div>
-                                <span class="material-symbols-outlined text-amber-500 text-4xl mb-2">trending_up</span>
-                                <h3 id="edit-slide12-biz-title" contenteditable="true" class="font-bold text-zinc-100 text-sm mb-2">Dampak Bisnis & Pertumbuhan</h3>
-                                <ul id="edit-slide12-biz-list" contenteditable="true" class="text-zinc-400 space-y-2 leading-relaxed">
-                                    <li>• Mencapai Pendapatan Berulang Tahunan (ARR) sebesar USD 1,2 Juta melalui kontrak B2G & B2NGO.</li>
-                                    <li>• Menggelar 30+ jaringan komando mitigasi lokal di kabupaten/kota rawan bencana.</li>
-                                    <li>• Menjual 1.000+ unit Resku Hub Beacon untuk diintegrasikan pada infrastruktur desa tangguh bencana.</li>
-                                </ul>
+                        <!-- ROW 2: Solutions (Orange vertical label on left + 3 cards) -->
+                        <div class="col-span-1 bg-amber-500 rounded-xl flex items-center justify-center py-4 shadow-md min-h-[120px]">
+                            <span id="edit-slide12-solution-vertical" contenteditable="true" class="font-mono font-bold text-zinc-950 uppercase tracking-widest [writing-mode:vertical-lr] rotate-180 text-center text-[10px]">
+                                Solution
+                            </span>
+                        </div>
+                        <div class="col-span-11 grid grid-cols-3 gap-3">
+                            <!-- Card 1 -->
+                            <div class="p-3 bg-white border border-amber-500 rounded-xl text-zinc-800 shadow-sm flex flex-col justify-center">
+                                <h4 id="edit-slide12-sol-title1" contenteditable="true" class="font-bold text-xs text-amber-600 mb-1.5 uppercase tracking-wide">
+                                    Real-Time Survivor Triage
+                                </h4>
+                                <p id="edit-slide12-sol-desc1" contenteditable="true" class="text-[9px] text-zinc-600">
+                                    Triase medis darurat dan posisi geografis survivor terkirim langsung secara offline untuk prioritas evakuasi instan.
+                                </p>
                             </div>
-                            <div id="edit-slide12-biz-footer" contenteditable="true" class="mt-4 pt-4 border-t border-zinc-850 text-amber-400 font-mono font-bold text-right text-[10px]">
-                                Profitabilitas Berkelanjutan untuk Riset Lanjutan
+                            <!-- Card 2 -->
+                            <div class="p-3 bg-white border border-amber-500 rounded-xl text-zinc-800 shadow-sm flex flex-col justify-center">
+                                <h4 id="edit-slide12-sol-title2" contenteditable="true" class="font-bold text-xs text-amber-600 mb-1.5 uppercase tracking-wide">
+                                    Ad-Hoc BLE Mesh Network
+                                </h4>
+                                <p id="edit-slide12-sol-desc2" contenteditable="true" class="text-[9px] text-zinc-600">
+                                    Smartphone korban saling terhubung membentuk jaringan mandiri penyebar data tanpa pulsa maupun kuota internet.
+                                </p>
+                            </div>
+                            <!-- Card 3 -->
+                            <div class="p-3 bg-white border border-amber-500 rounded-xl text-zinc-800 shadow-sm flex flex-col justify-center relative">
+                                <h4 id="edit-slide12-sol-title3" contenteditable="true" class="font-bold text-xs text-amber-600 mb-1.5 uppercase tracking-wide">
+                                    Command Center Insights
+                                </h4>
+                                <p id="edit-slide12-sol-desc3" contenteditable="true" class="text-[9px] text-zinc-600">
+                                    Peta taktis offline dan asisten AI lokal memberikan rekomendasi alokasi logistik, anggaran, dan personel penolong.
+                                </p>
+                                
+                                <!-- Mascot Molee in the bottom right corner of the slide -->
+                                <div class="absolute right-[-14px] bottom-[-14px] w-14 h-14 pointer-events-none select-none z-20">
+                                    <img src="../svg/svg/molee.svg" class="w-full h-full object-contain" alt="Mascot Molee" />
+                                </div>
                             </div>
                         </div>
+
                     </div>
                 </div>
 
@@ -1393,6 +1596,26 @@
                 goToSlide(currentSlide - 1);
             }
         });
+
+        // Toggle view between Visual Canvas and Text Summary for VPC Slide
+        function toggleVpcView(view) {
+            const visualContainer = document.getElementById("vpc-visual-container");
+            const textContainer = document.getElementById("vpc-text-container");
+            const btnVisual = document.getElementById("btn-vpc-visual");
+            const btnText = document.getElementById("btn-vpc-text");
+
+            if (view === 'visual') {
+                visualContainer.classList.remove("hidden");
+                textContainer.classList.add("hidden");
+                btnVisual.className = "px-3 py-1.5 rounded bg-amber-500 text-zinc-950 font-bold transition-all";
+                btnText.className = "px-3 py-1.5 rounded text-zinc-400 hover:text-zinc-200 transition-all";
+            } else {
+                visualContainer.classList.add("hidden");
+                textContainer.classList.remove("hidden");
+                btnVisual.className = "px-3 py-1.5 rounded text-zinc-400 hover:text-zinc-200 transition-all";
+                btnText.className = "px-3 py-1.5 rounded bg-amber-500 text-zinc-950 font-bold transition-all";
+            }
+        }
 
         // Initialize saved data
         loadSavedData();
