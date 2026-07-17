@@ -450,6 +450,12 @@ class ReskuModal extends StatelessWidget {
   final String lastUpdate;
   final String coordinates;
   final String needs;
+  final String message; // Raw text message description
+  final bool isAnalyzing;
+  final VoidCallback? onAiTriage;
+  final SurvivorStatus? aiSuggestedStatus;
+  final String? aiSuggestedNeeds;
+  final VoidCallback? onApplyAiTriage;
   final VoidCallback onDismiss;
   final VoidCallback onDeploy;
 
@@ -460,6 +466,12 @@ class ReskuModal extends StatelessWidget {
     required this.lastUpdate,
     required this.coordinates,
     required this.needs,
+    required this.message,
+    this.isAnalyzing = false,
+    this.onAiTriage,
+    this.aiSuggestedStatus,
+    this.aiSuggestedNeeds,
+    this.onApplyAiTriage,
     required this.onDismiss,
     required this.onDeploy,
   });
@@ -526,7 +538,145 @@ class ReskuModal extends StatelessWidget {
                 valueColor: AppColors.orange,
                 fontFamily: 'monospace',
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 12),
+              
+              // Survivor Message Section
+              const Text(
+                'SURVIVOR MESSAGE:',
+                style: TextStyle(
+                  fontSize: 9,
+                  color: AppColors.muted,
+                  fontWeight: FontWeight.bold,
+                  fontFamily: 'monospace',
+                ),
+              ),
+              const SizedBox(height: 4),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: AppColors.grayBg,
+                  border: Border.all(color: AppColors.border),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  message.isEmpty ? 'No text description provided by survivor.' : '"$message"',
+                  style: TextStyle(
+                    color: message.isEmpty ? AppColors.muted : AppColors.black,
+                    fontSize: 11,
+                    fontStyle: message.isEmpty ? FontStyle.italic : FontStyle.normal,
+                    height: 1.35,
+                  ),
+                ),
+              ),
+
+              // AI Triage Section
+              if (message.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                if (isAnalyzing) ...[
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: AppColors.grayBg,
+                      border: Border.all(color: AppColors.border),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: const [
+                        LinearProgressIndicator(
+                          color: AppColors.orange,
+                          backgroundColor: AppColors.border,
+                        ),
+                        SizedBox(height: 8),
+                        Text(
+                          'Analyzing text via local Qwen 2.5 SLM...',
+                          style: TextStyle(
+                            fontSize: 9,
+                            fontFamily: 'monospace',
+                            color: AppColors.muted,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  ),
+                ] else if (aiSuggestedStatus != null) ...[
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: AppColors.injuredBg.withValues(alpha: 0.1),
+                      border: Border.all(color: AppColors.injuredBorder, width: 1.5),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Row(
+                          children: const [
+                            Icon(Icons.auto_awesome, color: AppColors.injured, size: 14),
+                            SizedBox(width: 6),
+                            Text(
+                              'AI TRIAGE SUGGESTIONS',
+                              style: TextStyle(
+                                fontSize: 9,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.injured,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            const Text('Urgency: ', style: TextStyle(fontSize: 10, color: AppColors.muted)),
+                            ReskuBadge(status: status),
+                            const SizedBox(width: 4),
+                            const Icon(Icons.arrow_forward, size: 10, color: AppColors.muted),
+                            const SizedBox(width: 4),
+                            ReskuBadge(status: aiSuggestedStatus!),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text('Needs:   ', style: TextStyle(fontSize: 10, color: AppColors.muted)),
+                            Expanded(
+                              child: Text(
+                                '${needs.isEmpty ? "None" : needs}  ➔  ${aiSuggestedNeeds!.isEmpty ? "None" : aiSuggestedNeeds}',
+                                style: const TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.black,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                        ReskuButton.secondary(
+                          label: 'Apply AI Suggestions',
+                          icon: Icons.check,
+                          height: 28,
+                          onPressed: onApplyAiTriage,
+                        ),
+                      ],
+                    ),
+                  ),
+                ] else ...[
+                  ReskuButton.outlined(
+                    label: 'Run AI Triage (Qwen SLM)',
+                    icon: Icons.auto_awesome,
+                    height: 32,
+                    onPressed: onAiTriage,
+                  ),
+                ],
+              ],
+
+              const SizedBox(height: 12),
               const Text(
                 'REPORTED NEEDS:',
                 style: TextStyle(
@@ -546,9 +696,9 @@ class ReskuModal extends StatelessWidget {
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
-                  needs,
-                  style: const TextStyle(
-                    color: AppColors.black,
+                  needs.isEmpty ? 'No needs specified.' : needs,
+                  style: TextStyle(
+                    color: needs.isEmpty ? AppColors.muted : AppColors.black,
                     fontSize: 11,
                     height: 1.3,
                   ),
@@ -630,6 +780,227 @@ class ReskuModal extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// ReskuCentroidModal delivers the popup dialog detailing cluster-wide needs,
+/// sub-graph components, and the bulk supply drop deployment button.
+class ReskuCentroidModal extends StatelessWidget {
+  final String centroidName;
+  final int totalSurvivors;
+  final Map<String, int> aggregateNeeds;
+  final List<String> survivorNames;
+  final VoidCallback onDismiss;
+  final VoidCallback onDeployBulk;
+
+  const ReskuCentroidModal({
+    super.key,
+    required this.centroidName,
+    required this.totalSurvivors,
+    required this.aggregateNeeds,
+    required this.survivorNames,
+    required this.onDismiss,
+    required this.onDeployBulk,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: Colors.black45,
+      child: Center(
+        child: Container(
+          width: 340,
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppColors.border),
+            boxShadow: const [
+              BoxShadow(
+                color: Colors.black12,
+                blurRadius: 15,
+                offset: Offset(0, 8),
+              )
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: const [
+                      Icon(Icons.inventory_2, color: AppColors.orange, size: 20),
+                      SizedBox(width: 8),
+                      Text(
+                        'CENTROID LOGISTICS HUB',
+                        style: AppTextStyles.cardTitle,
+                      ),
+                    ],
+                  ),
+                  IconButton(
+                    constraints: const BoxConstraints(),
+                    padding: EdgeInsets.zero,
+                    icon: const Icon(Icons.close, color: AppColors.muted, size: 20),
+                    onPressed: onDismiss,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              
+              Row(
+                children: [
+                  const Text('CENTROID NODE: ', style: AppTextStyles.monospaceLabel),
+                  Text(centroidName, style: AppTextStyles.bodyBold),
+                ],
+              ),
+              const SizedBox(height: 6),
+              Row(
+                children: [
+                  const Text('TOTAL POPULATION: ', style: AppTextStyles.monospaceLabel),
+                  Text('$totalSurvivors active survivors', style: AppTextStyles.bodyBold),
+                ],
+              ),
+              const SizedBox(height: 12),
+
+              // Aggregated Supply Needs Section
+              const Text(
+                'AGGREGATED SUPPLY NEEDS:',
+                style: TextStyle(
+                  fontSize: 9,
+                  color: AppColors.muted,
+                  fontWeight: FontWeight.bold,
+                  fontFamily: 'monospace',
+                ),
+              ),
+              const SizedBox(height: 6),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: AppColors.grayBg,
+                  border: Border.all(color: AppColors.border),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: aggregateNeeds.isEmpty
+                    ? const Text(
+                        'No specific resource needs requested by cluster survivors.',
+                        style: TextStyle(color: AppColors.muted, fontSize: 11, fontStyle: FontStyle.italic),
+                      )
+                    : Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: aggregateNeeds.entries.map((entry) {
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 4.0),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  entry.key,
+                                  style: AppTextStyles.bodyRegular,
+                                ),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.orange.withValues(alpha: 0.1),
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: Text(
+                                    'x${entry.value}',
+                                    style: AppTextStyles.monospaceBold.copyWith(
+                                      color: AppColors.orange,
+                                      fontSize: 10,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        }).toList(),
+                      ),
+              ),
+              const SizedBox(height: 12),
+
+              // Cluster Members
+              const Text(
+                'CLUSTER SURVIVOR LIST:',
+                style: TextStyle(
+                  fontSize: 9,
+                  color: AppColors.muted,
+                  fontWeight: FontWeight.bold,
+                  fontFamily: 'monospace',
+                ),
+              ),
+              const SizedBox(height: 4),
+              SizedBox(
+                height: 60,
+                child: SingleChildScrollView(
+                  child: Text(
+                    survivorNames.join(', '),
+                    style: const TextStyle(
+                      fontSize: 10,
+                      color: AppColors.muted,
+                      height: 1.35,
+                    ),
+                  ),
+                ),
+              ),
+              
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: AppColors.border),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                      onPressed: onDismiss,
+                      child: const Text(
+                        'Cancel',
+                        style: TextStyle(
+                          color: AppColors.black,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.orange,
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                      onPressed: onDeployBulk,
+                      child: const Text(
+                        'Deploy Bulk Drop',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

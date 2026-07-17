@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'app/survivor_app.dart';
+import 'app/mule_app.dart';
 import 'core/database/local_db.dart';
 import 'core/network/ble/ble_mesh_manager.dart';
 
@@ -12,5 +12,5 @@ void main() async {
   // Initialize BLE Ad-Hoc mesh manager data
   await BleMeshManager().init();
   
-  runApp(const SurvivorApp());
+  runApp(const MuleApp());
 }

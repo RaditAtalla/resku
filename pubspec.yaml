@@ -40,7 +40,13 @@ dependencies:
   hive_flutter: ^1.1.0
   flutter_map: ^6.1.0
   shelf: ^1.4.1
+  http: ^1.1.0
   path_provider: ^2.1.1
+  permission_handler: ^12.0.3
+  geolocator: ^13.0.1
+  latlong2: ^0.9.0
+  battery_plus: ^6.0.2
+  dio: ^5.4.3
 
 dev_dependencies:
   flutter_test:
