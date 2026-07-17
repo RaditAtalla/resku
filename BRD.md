@@ -50,7 +50,7 @@ Untuk menjaga keberlanjutan finansial, pengembangan riset, dan pemeliharaan plat
 
 ```mermaid
 graph TD
-    A[Ekosistem Resku] --> B[SaaS Berlangganan B2G/B2B]
+    A[Ekosistem Resku] --> B[SaaS Berlangganan B2G/B2NGO]
     A --> C[Kemitraan Perangkat Keras]
     B --> B1[Akses Rescuer Desktop Dashboard]
     B --> B2[Integrasi GIS Premium & Offline Maps]
@@ -59,7 +59,7 @@ graph TD
     C --> C2[Gateway BLE Portable & Drone Scanner]
 ```
 
-### 4.1. SaaS Berlangganan (B2G/B2B Subscription)
+### 4.1. SaaS Berlangganan (B2G/B2NGO Subscription)
 
 Pemerintah dan NGO membayar biaya lisensi tahunan untuk mengakses ekosistem komando Resku:
 
