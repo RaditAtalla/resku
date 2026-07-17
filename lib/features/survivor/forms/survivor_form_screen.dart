@@ -19,9 +19,7 @@ class _SurvivorFormScreenState extends State<SurvivorFormScreen>
     with SingleTickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _nameController = TextEditingController();
-
-  SurvivorStatus _status = SurvivorStatus.safe;
-  final List<String> _needs = [];
+  final TextEditingController _messageController = TextEditingController();
 
   // Mesh state variables
   int _otherDevicesCount = 0;
@@ -90,6 +88,7 @@ class _SurvivorFormScreenState extends State<SurvivorFormScreen>
 
     _pulseController.dispose();
     _nameController.dispose();
+    _messageController.dispose();
     _pageController.dispose();
     _pageTimer?.cancel();
     super.dispose();
@@ -220,11 +219,7 @@ class _SurvivorFormScreenState extends State<SurvivorFormScreen>
       final localRecord = existing.first;
       setState(() {
         _nameController.text = localRecord.name == 'Anonymous' ? '' : localRecord.name;
-        _status = localRecord.status;
-        _needs.clear();
-        if (localRecord.needs.isNotEmpty) {
-          _needs.addAll(localRecord.needs.split(', ').where((s) => s.isNotEmpty));
-        }
+        _messageController.text = localRecord.message;
         _formPrepopulated = true;
       });
     }
@@ -234,49 +229,7 @@ class _SurvivorFormScreenState extends State<SurvivorFormScreen>
     });
   }
 
-  Color _getStatusColor(SurvivorStatus status) {
-    switch (status) {
-      case SurvivorStatus.safe:
-        return AppColors.safe;
-      case SurvivorStatus.injured:
-        return AppColors.injured;
-      case SurvivorStatus.critical:
-        return AppColors.critical;
-    }
-  }
 
-  Color _getStatusBgColor(SurvivorStatus status) {
-    switch (status) {
-      case SurvivorStatus.safe:
-        return AppColors.safeBg;
-      case SurvivorStatus.injured:
-        return AppColors.injuredBg;
-      case SurvivorStatus.critical:
-        return AppColors.criticalBg;
-    }
-  }
-
-  Color _getStatusBorderColor(SurvivorStatus status) {
-    switch (status) {
-      case SurvivorStatus.safe:
-        return AppColors.safeBorder;
-      case SurvivorStatus.injured:
-        return AppColors.injuredBorder;
-      case SurvivorStatus.critical:
-        return AppColors.criticalBorder;
-    }
-  }
-
-  String _getStatusText(SurvivorStatus status) {
-    switch (status) {
-      case SurvivorStatus.safe:
-        return 'Safe / No Direct Danger';
-      case SurvivorStatus.injured:
-        return 'Injured / Needs Attention';
-      case SurvivorStatus.critical:
-        return 'Critical / Emergency Assistance';
-    }
-  }
 
   Future<Position?> _determinePosition() async {
     bool serviceEnabled;
@@ -325,6 +278,7 @@ class _SurvivorFormScreenState extends State<SurvivorFormScreen>
     final double lng = position?.longitude ?? 106.8475;
 
     final name = _nameController.text.trim();
+    final messageText = _messageController.text.trim();
     final db = LocalDB();
     final myId = await db.getOrCreateDeviceUUID();
 
@@ -340,16 +294,20 @@ class _SurvivorFormScreenState extends State<SurvivorFormScreen>
       batteryLevel = await Battery().batteryLevel;
     } catch (_) {}
 
+    final status = messageText.isEmpty ? SurvivorStatus.safe : SurvivorStatus.injured;
+    final needs = "";
+
     final record = SurvivorRecord(
       id: myId,
       name: name.isEmpty ? 'Anonymous' : name,
       latitude: lat,
       longitude: lng,
-      status: _status,
-      needs: _needs.join(', '),
+      status: status,
+      needs: needs,
       timestamp: DateTime.now().millisecondsSinceEpoch,
       sequenceNumber: seqNum,
       batteryPercentage: batteryLevel,
+      message: messageText,
     );
 
     // Save to local database
@@ -678,192 +636,22 @@ class _SurvivorFormScreenState extends State<SurvivorFormScreen>
                         ),
                       ),
                       const SizedBox(height: 20),
-
-                      // Triage Status Dropdown in Color
                       Text(
-                        'Triage Status Severity',
+                        'Describe your situation / request',
                         style: AppTextStyles.bodyBold
                             .copyWith(color: AppColors.muted),
                       ),
                       const SizedBox(height: 8),
-                      AnimatedContainer(
-                        duration: const Duration(milliseconds: 300),
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: _getStatusBgColor(_status),
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(
-                              color: _getStatusBorderColor(_status),
-                              width: 1.5),
+                      SizedBox(
+                        height: 120,
+                        child: ReskuTextField(
+                          controller: _messageController,
+                          hintText: 'Describe what you need, any injuries, or your current condition (Optional)...',
+                          maxCount: 200,
                         ),
-                        child: DropdownButtonHideUnderline(
-                          child: DropdownButton<SurvivorStatus>(
-                            value: _status,
-                            dropdownColor: Colors.white,
-                            icon: Icon(Icons.arrow_drop_down,
-                                color: _getStatusColor(_status)),
-                            items: SurvivorStatus.values.map((status) {
-                              final color = _getStatusColor(status);
-                              return DropdownMenuItem<SurvivorStatus>(
-                                value: status,
-                                child: Row(
-                                  children: [
-                                    Container(
-                                      width: 12,
-                                      height: 12,
-                                      decoration: BoxDecoration(
-                                        color: color,
-                                        shape: BoxShape.circle,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Text(
-                                      _getStatusText(status),
-                                      style: TextStyle(
-                                        color: color,
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 12,
-                                        fontFamily: 'Inter',
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            }).toList(),
-                            onChanged: (val) {
-                              if (val != null) {
-                                setState(() {
-                                  _status = val;
-                                });
-                              }
-                            },
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-
-                      // Needed Resource with Checkbox
-                      Text(
-                        'Needed Resources',
-                        style: AppTextStyles.bodyBold
-                            .copyWith(color: AppColors.muted),
-                      ),
-                      const SizedBox(height: 8),
-                      Column(
-                        children: [
-                          _buildResourceTile(
-                            title: 'Food & Water',
-                            icon: Icons.local_drink,
-                            value: 'Food & Water',
-                          ),
-                          _buildResourceTile(
-                            title: 'First Aid / Medical',
-                            icon: Icons.healing,
-                            value: 'First Aid / Medical',
-                          ),
-                          _buildResourceTile(
-                            title: 'Shelter & Blanket',
-                            icon: Icons.home,
-                            value: 'Shelter',
-                          ),
-                          _buildResourceTile(
-                            title: 'Tools & Warmth',
-                            icon: Icons.build,
-                            value: 'Tools / Warmth',
-                          ),
-                        ],
                       ),
                     ],
                   ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildResourceTile({
-    required String title,
-    required IconData icon,
-    required String value,
-  }) {
-    final isSelected = _needs.contains(value);
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10.0),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () {
-            setState(() {
-              if (isSelected) {
-                _needs.remove(value);
-              } else {
-                _needs.add(value);
-              }
-            });
-          },
-          borderRadius: BorderRadius.circular(12),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(
-              color: isSelected
-                  ? AppColors.orange.withValues(alpha: 0.08)
-                  : Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: isSelected ? AppColors.orange : AppColors.border,
-                width: 1,
-              ),
-              boxShadow: const [
-                BoxShadow(
-                  color: Color(0x05000000),
-                  blurRadius: 3,
-                  offset: Offset(0, 1),
-                )
-              ],
-            ),
-            child: Row(
-              children: [
-                Icon(
-                  icon,
-                  color: isSelected ? AppColors.orange : AppColors.muted,
-                  size: 20,
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Text(
-                    title,
-                    style: TextStyle(
-                      color: isSelected ? AppColors.black : AppColors.muted,
-                      fontWeight:
-                          isSelected ? FontWeight.bold : FontWeight.normal,
-                      fontSize: 12,
-                      fontFamily: 'Inter',
-                    ),
-                  ),
-                ),
-                Container(
-                  width: 20,
-                  height: 20,
-                  decoration: BoxDecoration(
-                    color: isSelected ? AppColors.orange : Colors.transparent,
-                    borderRadius: BorderRadius.circular(6),
-                    border: Border.all(
-                      color: isSelected ? AppColors.orange : AppColors.border,
-                      width: 1.5,
-                    ),
-                  ),
-                  child: isSelected
-                      ? const Icon(
-                          Icons.check,
-                          color: Colors.white,
-                          size: 14,
-                        )
-                      : null,
                 ),
               ],
             ),

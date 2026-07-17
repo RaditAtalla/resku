@@ -11,6 +11,7 @@ class OsmMapWidget extends StatefulWidget {
   final String searchQuery;
   final ValueChanged<String> onSearchChanged;
   final ValueChanged<String> onSurvivorSelected;
+  final void Function(String centroidId, List<String> nodeIds)? onCentroidSelected;
   final VoidCallback onRefocusBaseCamp;
   final Set<String> articulationPoints;
   final Map<String, String> nodeToCentroid;
@@ -22,6 +23,7 @@ class OsmMapWidget extends StatefulWidget {
     required this.searchQuery,
     required this.onSearchChanged,
     required this.onSurvivorSelected,
+    this.onCentroidSelected,
     required this.onRefocusBaseCamp,
     required this.articulationPoints,
     required this.nodeToCentroid,
@@ -85,6 +87,36 @@ class _OsmMapWidgetState extends State<OsmMapWidget> with SingleTickerProviderSt
     super.dispose();
   }
 
+  List<Polyline> _buildCentroidConnectionLines() {
+    final List<Polyline> lines = [];
+    
+    for (var survivor in widget.survivors) {
+      final centroidId = widget.nodeToCentroid[survivor.id];
+      if (centroidId != null && centroidId != survivor.id) {
+        // Find the centroid's record to get its lat/lng
+        final centroidRecord = widget.survivors.firstWhere(
+          (s) => s.id == centroidId,
+          orElse: () => survivor,
+        );
+        
+        if (centroidRecord != survivor) {
+          lines.add(
+            Polyline(
+              points: [
+                LatLng(survivor.latitude, survivor.longitude),
+                LatLng(centroidRecord.latitude, centroidRecord.longitude),
+              ],
+              strokeWidth: 2.0,
+              color: AppColors.orange.withValues(alpha: 0.4),
+              isDotted: true,
+            ),
+          );
+        }
+      }
+    }
+    
+    return lines;
+  }
   void _refocusBaseCamp() {
     _mapController.move(LatLng(baseCampLat, baseCampLng), 15.0);
     widget.onRefocusBaseCamp();
@@ -124,7 +156,9 @@ class _OsmMapWidgetState extends State<OsmMapWidget> with SingleTickerProviderSt
                     urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                     userAgentPackageName: 'com.resku.app',
                   ),
-                  
+                  PolylineLayer(
+                    polylines: _buildCentroidConnectionLines(),
+                  ),
                   MarkerLayer(
                     markers: [
                       // Base camp marker with concentric rings
@@ -190,7 +224,17 @@ class _OsmMapWidgetState extends State<OsmMapWidget> with SingleTickerProviderSt
                           width: 100.0,
                           height: 70.0,
                           child: GestureDetector(
-                            onTap: () => widget.onSurvivorSelected(survivor.id),
+                            onTap: () {
+                              if (isCentroid && widget.onCentroidSelected != null) {
+                                final componentNodeIds = widget.survivors
+                                    .where((s) => widget.nodeToCentroid[s.id] == survivor.id)
+                                    .map((s) => s.id)
+                                    .toList();
+                                widget.onCentroidSelected!(survivor.id, componentNodeIds);
+                              } else {
+                                widget.onSurvivorSelected(survivor.id);
+                              }
+                            },
                             child: Column(
                               mainAxisSize: MainAxisSize.min,
                               children: [
@@ -236,7 +280,7 @@ class _OsmMapWidgetState extends State<OsmMapWidget> with SingleTickerProviderSt
                                         ],
                                       ),
                                       child: isCentroid
-                                          ? const Icon(Icons.star, color: Colors.white, size: 8)
+                                          ? const Icon(Icons.inventory_2, color: Colors.white, size: 8)
                                           : null,
                                     ),
                                   ],

@@ -175,4 +175,40 @@ class NetworkAnalysisEngine {
 
     return articulationPoints;
   }
+
+  // C. Aggregates the needs of all active (non-safe) survivors in a connected component.
+  static Map<String, int> aggregateComponentNeeds(
+    List<String> component,
+    List<SurvivorRecord> survivors,
+  ) {
+    final Map<String, int> demand = {};
+
+    for (var nodeId in component) {
+      final survivor = survivors.firstWhere(
+        (s) => s.id == nodeId,
+        orElse: () => SurvivorRecord(
+          id: nodeId,
+          name: 'Unknown',
+          latitude: 0.0,
+          longitude: 0.0,
+          status: SurvivorStatus.safe,
+          needs: '',
+          timestamp: 0,
+          sequenceNumber: 0,
+          batteryPercentage: 0,
+          message: '',
+        ),
+      );
+      if (survivor.status == SurvivorStatus.safe) continue; // Skip safe nodes
+
+      if (survivor.needs.isNotEmpty) {
+        final needsList = survivor.needs.split(', ').map((e) => e.trim()).where((e) => e.isNotEmpty);
+        for (var need in needsList) {
+          demand[need] = (demand[need] ?? 0) + 1;
+        }
+      }
+    }
+
+    return demand;
+  }
 }

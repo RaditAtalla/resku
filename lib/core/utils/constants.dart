@@ -9,7 +9,4 @@ class AppConstants {
   
   // Local HTTP Sync Server
   static const int defaultSyncPort = 8080;
-  
-  // AI Settings
-  static const String fallbackGeminiModel = 'gemini-1.5-flash';
 }

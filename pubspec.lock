@@ -376,14 +376,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.0.1"
-  llamadart:
-    dependency: "direct main"
-    description:
-      name: llamadart
-      sha256: "10c630a5cf6b21b709aa90b72d8ad1ce5b196a6fe381bbb98d2b499e98b0b4f5"
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.1.0"
   logger:
     dependency: transitive
     description:

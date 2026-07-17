@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import '../../../core/database/local_db.dart';
@@ -9,11 +8,10 @@ import '../../../core/models/rescuer_message.dart';
 import '../../../core/models/network_link.dart';
 import '../../../core/network/network_analysis_engine.dart';
 import '../../../core/utils/design_system.dart';
-import '../../../core/utils/heuristic_engine.dart';
+import '../../../core/utils/local_llm_service.dart';
 import 'map/osm_map_widget.dart';
 import 'table/survivors_table_widget.dart';
-import 'ai/ai_planner_widget.dart';
-import 'ai/copilot_chat_widget.dart';
+import 'dispatch_planner_widget.dart';
 
 // Central Rescuer Dashboard UI for Desktop / Web.
 // Refactored to leverage the unified design system.
@@ -29,12 +27,18 @@ class _RescuerDashboardScreenState extends State<RescuerDashboardScreen> {
   List<SurvivorRecord> _survivors = [];
   String _searchQuery = '';
   String _triageFilter = 'all';
-  bool _isAiLoading = false;
-  List<SurvivorRecord> _aiPlan = [];
   String? _focusedSurvivorId;
   Set<String> _articulationPoints = {};
   Map<String, String> _nodeToCentroid = {}; // maps nodeId -> medoid node ID
-  bool _showCopilotChat = false;
+  
+  // AI Triage States
+  bool _isAiTriageLoading = false;
+  SurvivorStatus? _aiSuggestedStatus;
+  String? _aiSuggestedNeeds;
+
+  // Centroid Logistics States
+  String? _focusedCentroidId;
+  List<String>? _focusedCentroidComponent;
   
   // Toast notifications state
   String? _toastText;
@@ -105,61 +109,7 @@ class _RescuerDashboardScreenState extends State<RescuerDashboardScreen> {
     }
   }
 
-  String _compileSystemGraphContext() {
-    final sb = StringBuffer();
-    sb.writeln('You are the Resku Disaster Copilot, an offline AI assistant coordinating search and rescue operations.');
-    sb.writeln('You are running on-device via WebGPU local inference.');
-    sb.writeln('Below is the real-time topological analysis of the Smartphone Ad-hoc Network (SPAN) active in the field:');
-    sb.writeln();
 
-    sb.writeln('## Mesh Network Statistics');
-    sb.writeln('- Total active survivor devices (vertices): ${_survivors.length}');
-    sb.writeln('- Connected ad-hoc network components: ${(_nodeToCentroid.values.toSet()).length}');
-    sb.writeln();
-
-    sb.writeln('## Staging Area Hubs (Centroids)');
-    final uniqueCentroids = _nodeToCentroid.values.toSet();
-    if (uniqueCentroids.isEmpty) {
-      sb.writeln('- None mapped.');
-    } else {
-      for (var cid in uniqueCentroids) {
-        final hub = _survivors.firstWhere((s) => s.id == cid, orElse: () => SurvivorRecord(id: cid, name: 'Unknown', latitude: 0, longitude: 0, status: SurvivorStatus.safe, needs: '', timestamp: 0, sequenceNumber: 0, batteryPercentage: 100));
-        sb.writeln('- Hub Node: ${hub.name} (${hub.id.substring(math.max(0, hub.id.length - 6))}) at Lat/Lon: ${hub.latitude.toStringAsFixed(4)}, ${hub.longitude.toStringAsFixed(4)}');
-      }
-    }
-    sb.writeln();
-
-    sb.writeln("## Critical Communication Relays (Tarjan's Articulation Points)");
-    if (_articulationPoints.isEmpty) {
-      sb.writeln('- No single point of failure (cut-vertices) detected. Ad-hoc topology is robust.');
-    } else {
-      sb.writeln('WARNING: The following nodes are critical relays. If they fail, the network will partition:');
-      for (var apId in _articulationPoints) {
-        final node = _survivors.firstWhere((s) => s.id == apId, orElse: () => SurvivorRecord(id: apId, name: 'Unknown', latitude: 0, longitude: 0, status: SurvivorStatus.safe, needs: '', timestamp: 0, sequenceNumber: 0, batteryPercentage: 100));
-        sb.writeln("- Relay: ${node.name} (${node.id.substring(math.max(0, node.id.length - 6))}) | Battery: ${node.batteryPercentage}%${node.batteryPercentage < 20 ? ' [WARNING: CRITICAL LOW BATTERY]' : ''}");
-      }
-    }
-    sb.writeln();
-
-    sb.writeln('## Priority Rescue Dispatch Queue (Heuristics-Sorted)');
-    final activeQueue = _survivors.where((s) => s.status != SurvivorStatus.safe).toList();
-    if (activeQueue.isEmpty) {
-      sb.writeln('- No pending survivors requiring urgent triage.');
-    } else {
-      final sorted = HeuristicEngine.sortDispatchQueue(_survivors, articulationPoints: _articulationPoints);
-      for (int i = 0; i < sorted.length; i++) {
-        final s = sorted[i];
-        sb.writeln('${i + 1}. ${s.name} (${s.id.substring(math.max(0, s.id.length - 6))})');
-        sb.writeln('   - Status: ${s.status.name.toUpperCase()}');
-        sb.writeln('   - Needs: ${s.needs.isNotEmpty ? s.needs : "None reported"}');
-        sb.writeln('   - Battery: ${s.batteryPercentage}%');
-        sb.writeln('   - Proximity: ${HeuristicEngine.calculateDistanceFromBaseCamp(s.latitude, s.longitude).toStringAsFixed(2)} km');
-      }
-    }
-    sb.writeln();
-    sb.writeln('Keep answers concise, strategic, and tactical. Answer user queries by analyzing this system context.');
-    return sb.toString();
-  }
 
 
   void _startClock() {
@@ -239,26 +189,6 @@ class _RescuerDashboardScreenState extends State<RescuerDashboardScreen> {
     triggerToast('Map coordinates refocused onto base camp', Icons.my_location);
   }
 
-  // Generate AI Prioritization
-  void _generateAiPlan() {
-    setState(() {
-      _isAiLoading = true;
-    });
-
-    Timer(const Duration(seconds: 1), () {
-      if (!mounted) return;
-      
-      final prioritizedQueue = HeuristicEngine.sortDispatchQueue(_survivors, articulationPoints: _articulationPoints);
-
-      setState(() {
-        _aiPlan = prioritizedQueue;
-        _isAiLoading = false;
-      });
-
-      triggerToast('AI Optimal Rescue Schedule Calculated!', Icons.auto_awesome);
-    });
-  }
-
   // Deploy Team (Marks survivor as safe, triggers toast, updates list)
   void _deployRescueUnit(String id) {
     final survivorIndex = _survivors.indexWhere((s) => s.id == id);
@@ -277,15 +207,119 @@ class _RescuerDashboardScreenState extends State<RescuerDashboardScreen> {
       timestamp: DateTime.now().millisecondsSinceEpoch,
       sequenceNumber: survivor.sequenceNumber + 1,
       batteryPercentage: survivor.batteryPercentage,
+      message: survivor.message,
     );
 
     setState(() {
       _survivors[survivorIndex] = updated;
-      _aiPlan.removeWhere((s) => s.id == id);
       _focusedSurvivorId = null;
     });
 
     LocalDB().saveSurvivorRecord(updated);
+  }
+
+  // Run AI Triage using Local Ollama Qwen 2.5 SLM
+  void _runAiTriage(SurvivorRecord survivor) async {
+    setState(() {
+      _isAiTriageLoading = true;
+      _aiSuggestedStatus = null;
+      _aiSuggestedNeeds = null;
+    });
+
+    final result = await LocalLlmService().analyzeEmergency(survivor.message);
+
+    if (!mounted) return;
+
+    setState(() {
+      _isAiTriageLoading = false;
+      if (result != null) {
+        final statusStr = result['status'] as String;
+        _aiSuggestedStatus = SurvivorStatus.values.firstWhere(
+          (e) => e.name == statusStr,
+          orElse: () => SurvivorStatus.injured,
+        );
+        _aiSuggestedNeeds = result['needs'] as String;
+        triggerToast('AI Triage complete!', Icons.auto_awesome);
+      } else {
+        triggerToast('Failed to connect to local AI server.', Icons.error_outline);
+      }
+    });
+  }
+
+  // Apply AI triage recommendations and save to database
+  void _applyAiTriage(SurvivorRecord survivor) async {
+    if (_aiSuggestedStatus == null) return;
+
+    final survivorIndex = _survivors.indexWhere((s) => s.id == survivor.id);
+    if (survivorIndex == -1) return;
+
+    final updated = SurvivorRecord(
+      id: survivor.id,
+      name: survivor.name,
+      latitude: survivor.latitude,
+      longitude: survivor.longitude,
+      status: _aiSuggestedStatus!,
+      needs: _aiSuggestedNeeds ?? survivor.needs,
+      timestamp: DateTime.now().millisecondsSinceEpoch,
+      sequenceNumber: survivor.sequenceNumber + 1,
+      batteryPercentage: survivor.batteryPercentage,
+      message: survivor.message,
+    );
+
+    setState(() {
+      _survivors[survivorIndex] = updated;
+      _focusedSurvivorId = null;
+      _aiSuggestedStatus = null;
+      _aiSuggestedNeeds = null;
+    });
+
+    await LocalDB().saveSurvivorRecord(updated);
+    triggerToast('AI triage suggestions applied!', Icons.done_all);
+  }
+
+  // Focus a centroid cluster and save component node IDs
+  void _focusCentroid(String centroidId, List<String> nodeIds) {
+    setState(() {
+      _focusedCentroidId = centroidId;
+      _focusedCentroidComponent = nodeIds;
+    });
+  }
+
+  // Deploy supplies to all nodes in a centroid component bulk update
+  void _deployCentroidSupplies(String centroidId, List<String> nodeIds) async {
+    final db = LocalDB();
+    final centroidSurvivor = _survivors.firstWhere((s) => s.id == centroidId, orElse: () => _survivors.first);
+    triggerToast('Bulk supplies deployed to Centroid Hub: ${centroidSurvivor.name}', Icons.local_shipping);
+
+    for (var nodeId in nodeIds) {
+      final survivorIndex = _survivors.indexWhere((s) => s.id == nodeId);
+      if (survivorIndex != -1) {
+        final survivor = _survivors[survivorIndex];
+        final updated = SurvivorRecord(
+          id: survivor.id,
+          name: survivor.name,
+          latitude: survivor.latitude,
+          longitude: survivor.longitude,
+          status: SurvivorStatus.safe,
+          needs: 'None (Supplied by Bulk Centroid Drop)',
+          timestamp: DateTime.now().millisecondsSinceEpoch,
+          sequenceNumber: survivor.sequenceNumber + 1,
+          batteryPercentage: survivor.batteryPercentage,
+          message: survivor.message,
+        );
+
+        setState(() {
+          _survivors[survivorIndex] = updated;
+        });
+
+        await db.saveSurvivorRecord(updated);
+      }
+    }
+
+    setState(() {
+      _focusedCentroidId = null;
+      _focusedCentroidComponent = null;
+    });
   }
 
   // Send Broadcast Message
@@ -623,23 +657,6 @@ class _RescuerDashboardScreenState extends State<RescuerDashboardScreen> {
           ],
         ),
         actions: [
-
-          // Copilot AI Toggle Button
-          Padding(
-            padding: const EdgeInsets.only(right: 8.0),
-            child: Center(
-              child: ReskuButton.primary(
-                label: 'COPILOT',
-                icon: Icons.psychology_alt,
-                height: 28,
-                onPressed: () {
-                  setState(() {
-                    _showCopilotChat = !_showCopilotChat;
-                  });
-                },
-              ),
-            ),
-          ),
           // Mule Sync Action Button
           Padding(
             padding: const EdgeInsets.only(right: 8.0),
@@ -712,9 +729,18 @@ class _RescuerDashboardScreenState extends State<RescuerDashboardScreen> {
                 lastUpdate: _formatTime(focusedSurvivor.timestamp),
                 coordinates: '${focusedSurvivor.latitude.toStringAsFixed(4)}, ${focusedSurvivor.longitude.toStringAsFixed(4)}',
                 needs: focusedSurvivor.needs,
+                message: focusedSurvivor.message,
+                isAnalyzing: _isAiTriageLoading,
+                aiSuggestedStatus: _aiSuggestedStatus,
+                aiSuggestedNeeds: _aiSuggestedNeeds,
+                onAiTriage: () => _runAiTriage(focusedSurvivor),
+                onApplyAiTriage: () => _applyAiTriage(focusedSurvivor),
                 onDismiss: () {
                   setState(() {
                     _focusedSurvivorId = null;
+                    _aiSuggestedStatus = null;
+                    _aiSuggestedNeeds = null;
+                    _isAiTriageLoading = false;
                   });
                 },
                 onDeploy: () {
@@ -723,22 +749,35 @@ class _RescuerDashboardScreenState extends State<RescuerDashboardScreen> {
               ),
             ),
 
-          // Copilot Chat Drawer Overlay
-          if (_showCopilotChat)
-            Positioned(
-              top: 0,
-              bottom: 0,
-              right: 0,
-              width: 360,
-              child: CopilotChatWidget(
-                systemContext: _compileSystemGraphContext(),
-                onClose: () {
-                  setState(() {
-                    _showCopilotChat = false;
-                  });
-                },
-              ),
-            ),
+          // Centroid Logistics Modal Overlay
+          if (_focusedCentroidId != null && _focusedCentroidComponent != null) ...[
+            (() {
+              final centroidSurvivor = _survivors.firstWhere((s) => s.id == _focusedCentroidId, orElse: () => _survivors.first);
+              final aggregateNeeds = NetworkAnalysisEngine.aggregateComponentNeeds(_focusedCentroidComponent!, _survivors);
+              final survivorNames = _focusedCentroidComponent!.map((id) {
+                return _survivors.firstWhere((s) => s.id == id, orElse: () => centroidSurvivor).name;
+              }).toList();
+
+              return Positioned.fill(
+                child: ReskuCentroidModal(
+                  centroidName: centroidSurvivor.name,
+                  totalSurvivors: _focusedCentroidComponent!.length,
+                  aggregateNeeds: aggregateNeeds,
+                  survivorNames: survivorNames,
+                  onDismiss: () {
+                    setState(() {
+                      _focusedCentroidId = null;
+                      _focusedCentroidComponent = null;
+                    });
+                  },
+                  onDeployBulk: () {
+                    _deployCentroidSupplies(_focusedCentroidId!, _focusedCentroidComponent!);
+                  },
+                ),
+              );
+            })(),
+          ],
+
         ],
       ),
     );
@@ -763,6 +802,7 @@ class _RescuerDashboardScreenState extends State<RescuerDashboardScreen> {
                     searchQuery: _searchQuery,
                     onSearchChanged: _onSearchChanged,
                     onSurvivorSelected: _focusSurvivor,
+                    onCentroidSelected: _focusCentroid,
                     onRefocusBaseCamp: _refocusBaseCamp,
                     articulationPoints: _articulationPoints,
                     nodeToCentroid: _nodeToCentroid,
@@ -784,18 +824,12 @@ class _RescuerDashboardScreenState extends State<RescuerDashboardScreen> {
             ),
           ),
           const SizedBox(width: 16),
-          // Right Panel (AI Decision Hub & Broadcast Control)
+          // Right Panel (Broadcast Control)
           SizedBox(
             width: 360,
-            child: AiPlannerWidget(
-              survivors: _survivors,
-              isAiLoading: _isAiLoading,
-              aiPlan: _aiPlan,
+            child: DispatchPlannerWidget(
               broadcastLogs: _broadcastLogs,
-              onGeneratePlan: _generateAiPlan,
-              onDeployRescueUnit: _deployRescueUnit,
               onSendBroadcast: _sendBroadcast,
-              articulationPoints: _articulationPoints,
             ),
           ),
         ],
@@ -818,7 +852,7 @@ class _RescuerDashboardScreenState extends State<RescuerDashboardScreen> {
               tabs: [
                 Tab(icon: Icon(Icons.map), text: 'Map'),
                 Tab(icon: Icon(Icons.list), text: 'Survivors'),
-                Tab(icon: Icon(Icons.psychology), text: 'AI Plan'),
+                Tab(icon: Icon(Icons.campaign), text: 'Broadcast'),
               ],
             ),
           ),
@@ -833,6 +867,7 @@ class _RescuerDashboardScreenState extends State<RescuerDashboardScreen> {
                     searchQuery: _searchQuery,
                     onSearchChanged: _onSearchChanged,
                     onSurvivorSelected: _focusSurvivor,
+                    onCentroidSelected: _focusCentroid,
                     onRefocusBaseCamp: _refocusBaseCamp,
                     articulationPoints: _articulationPoints,
                     nodeToCentroid: _nodeToCentroid,
@@ -851,15 +886,9 @@ class _RescuerDashboardScreenState extends State<RescuerDashboardScreen> {
                 ),
                 Padding(
                   padding: const EdgeInsets.all(8.0),
-                  child: AiPlannerWidget(
-                    survivors: _survivors,
-                    isAiLoading: _isAiLoading,
-                    aiPlan: _aiPlan,
+                  child: DispatchPlannerWidget(
                     broadcastLogs: _broadcastLogs,
-                    onGeneratePlan: _generateAiPlan,
-                    onDeployRescueUnit: _deployRescueUnit,
                     onSendBroadcast: _sendBroadcast,
-                    articulationPoints: _articulationPoints,
                   ),
                 ),
               ],

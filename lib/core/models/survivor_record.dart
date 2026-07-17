@@ -10,6 +10,7 @@ class SurvivorRecord {
   final int timestamp; // Milliseconds since epoch
   final int sequenceNumber;
   final int batteryPercentage; // Battery percentage level (0 to 100)
+  final String message; // Optional description written or dictated by the survivor
 
   SurvivorRecord({
     required this.id,
@@ -21,6 +22,7 @@ class SurvivorRecord {
     required this.timestamp,
     required this.sequenceNumber,
     required this.batteryPercentage,
+    required this.message,
   });
 
   // Convert a record to a Map for serialization (e.g., JSON or MsgPack)
@@ -35,6 +37,7 @@ class SurvivorRecord {
       'timestamp': timestamp,
       'sequenceNumber': sequenceNumber,
       'batteryPercentage': batteryPercentage,
+      'message': message,
     };
   }
 
@@ -53,6 +56,7 @@ class SurvivorRecord {
       timestamp: map['timestamp'] as int,
       sequenceNumber: map['sequenceNumber'] as int,
       batteryPercentage: (map['batteryPercentage'] as int? ?? 100),
+      message: map['message'] as String? ?? '',
     );
   }
 }

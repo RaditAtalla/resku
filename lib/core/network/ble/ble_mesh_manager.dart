@@ -236,6 +236,7 @@ class BleMeshManager {
         timestamp: DateTime.now().millisecondsSinceEpoch,
         sequenceNumber: 1,
         batteryPercentage: batteryLevel,
+        message: '',
       ));
 
       final service = BleService(
